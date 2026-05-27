@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anchor Mics Display</title>
+    <link rel="stylesheet" href="/static/display.css" />
+  </head>
+  <body>
+    <main class="display-shell">
+      <header class="display-header">
+        <div class="clock-block">
+          <span class="clock-time" id="clockTime">--:--:-- --</span>
+        </div>
+        <div class="title-block">
+          <h1 class="show-title" id="showTitle">ANCHOR MICS</h1>
+        </div>
+        <div class="date-block">
+          <span class="show-date" id="showDate">---</span>
+        </div>
+      </header>
+
+      <section class="preview-shell">
+        <div class="preview-frame" id="previewFrame"></div>
+        <div class="preview-overlay">
+          <span class="preview-source" id="previewSource">NDI source not configured</span>
+        </div>
+      </section>
+
+      <section class="mic-strip" id="micStrip"></section>
+    </main>
+
+    <script src="/static/display.js" defer></script>
+  </body>
+</html>

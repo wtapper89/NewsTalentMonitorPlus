@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anchor Mics Config</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <header class="page-nav shell">
+      <a class="brand-mark" href="/dashboard">Anchor Mics</a>
+      <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/display">Display</a>
+        <a href="/config" class="is-active">Config</a>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <section class="hero hero-compact">
+        <div class="hero-copy">
+          <p class="eyebrow">Configuration</p>
+          <h1>Pi display and mic network setup</h1>
+          <p class="hero-text">
+            Configure the fullscreen display, Companion show title source, preview source, and the QLX-D receiver IP or hostname for each mic.
+          </p>
+          <p class="hero-note">
+            No separate Micboard install is required. Use the QLX-D receiver IP or hostname, not the handheld transmitter. For the big preview window, use a Pi-playable preview URL for your NDI source.
+          </p>
+        </div>
+        <div class="hero-status">
+          <div class="status-card">
+            <span class="status-label">Current source</span>
+            <strong id="configSource">...</strong>
+          </div>
+          <div class="status-card">
+            <span class="status-label">Mapping file</span>
+            <strong id="configPath">...</strong>
+          </div>
+          <div class="status-card">
+            <span class="status-label">Mic entries</span>
+            <strong id="configCount">...</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="board-shell">
+        <div class="board-header">
+          <div>
+            <p class="section-kicker">Receiver Settings</p>
+            <h2>Integrated QLX-D polling</h2>
+          </div>
+          <p class="board-note">Run this app with `ANCHOR_MICS_SOURCE=qlxd`. The HTTP path fields stay available for `system_api` mode if you use another Shure source later.</p>
+        </div>
+
+        <form id="configForm" class="config-form">
+          <section class="config-section">
+            <div class="config-grid" id="globalConfig"></div>
+          </section>
+
+          <section class="config-section">
+            <div class="board-header">
+              <div>
+                <p class="section-kicker">Per Mic</p>
+                <h2>Receiver channels</h2>
+              </div>
+              <button type="button" class="secondary button-inline" id="addMicButton">Add mic</button>
+            </div>
+            <div id="micConfigs" class="config-mic-grid"></div>
+          </section>
+
+          <div class="config-actions">
+            <button type="submit">Save configuration</button>
+            <span id="saveStatus" class="save-status"></span>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script src="/static/config.js" defer></script>
+  </body>
+</html>

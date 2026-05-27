@@ -1,0 +1,6 @@
+chromium-browser
+python3-pip
+python3-venv
+rsync
+unclutter
+x11-xserver-utils

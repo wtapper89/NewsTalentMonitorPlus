@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anchor Mics</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <header class="page-nav shell">
+      <a class="brand-mark" href="/dashboard">Anchor Mics</a>
+      <nav class="nav-links">
+        <a href="/dashboard" class="is-active">Dashboard</a>
+        <a href="/display">Display</a>
+        <a href="/config">Config</a>
+      </nav>
+    </header>
+    <main class="layout">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Control Room Dashboard</p>
+          <h1>Anchor Mics</h1>
+          <p class="hero-text">
+            Live Shure mic assignments, battery, RF, and error monitoring with Companion-ready output.
+          </p>
+          <p class="hero-note">QLX-D receivers can be polled directly from this app. Use the config page to set each receiver IP or hostname.</p>
+        </div>
+        <div class="hero-status">
+          <div class="status-card">
+            <span class="status-label">Source</span>
+            <strong id="sourceLabel">...</strong>
+          </div>
+          <div class="status-card">
+            <span class="status-label">Connection</span>
+            <strong id="connectionLabel">Connecting</strong>
+          </div>
+          <div class="status-card">
+            <span class="status-label">Updated</span>
+            <strong id="updatedLabel">...</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="summary" id="summaryCards"></section>
+
+      <section class="board-shell">
+        <div class="board-header">
+          <div>
+            <p class="section-kicker">Mic Board</p>
+            <h2>Assignments and telemetry</h2>
+          </div>
+          <p class="board-note">Rename the mic, update the assignee, and let Companion mirror the live state.</p>
+        </div>
+        <div class="board" id="board"></div>
+      </section>
+
+      <section class="alerts-shell">
+        <div class="board-header">
+          <div>
+            <p class="section-kicker">Attention</p>
+            <h2>Live alerts</h2>
+          </div>
+        </div>
+        <div class="alerts" id="alerts"></div>
+      </section>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

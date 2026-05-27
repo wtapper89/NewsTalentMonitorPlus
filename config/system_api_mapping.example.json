@@ -1,0 +1,151 @@
+{
+  "auth": {
+    "type": "none",
+    "token_url": "",
+    "grant_type": "client_credentials",
+    "client_id": "",
+    "client_secret": "",
+    "scope": "",
+    "username": "",
+    "password": ""
+  },
+  "default_headers": {
+    "Accept": "application/json"
+  },
+  "micboard": {
+    "data_url": "http://127.0.0.1:8058/data.json"
+  },
+  "display": {
+    "show_title_mode": "manual",
+    "manual_show_title": "TVC NEWS",
+    "preview_mode": "placeholder",
+    "preview_url": "",
+    "preview_source_name": "",
+    "preview_poster_url": "",
+    "font_family": "Gotham, Montserrat, Arial, sans-serif"
+  },
+  "companion": {
+    "enabled": false,
+    "base_url": "http://127.0.0.1:8000",
+    "connection_label": "Cuez",
+    "variable_name": ""
+  },
+  "default_connection": {
+    "scheme": "tcp",
+    "port": 2202
+  },
+  "mics": [
+    {
+      "id": "mic-1",
+      "default_name": "Mic 1 Red",
+      "receiver_name": "Rack A",
+      "channel_label": "A1",
+      "micboard_slot": 0,
+      "receiver_channel": 1,
+      "device_ip": "251mic1.cci.utk.edu",
+      "scheme": "tcp",
+      "port": 2202,
+      "telemetry_path": "/api/receivers/rack-a/channels/a1",
+      "telemetry_method": "GET",
+      "rename_path": "/api/receivers/rack-a/channels/a1/name",
+      "rename_method": "PUT",
+      "fields": {
+        "shure_name": "name",
+        "battery_percent": "battery.percent",
+        "signal_strength": "rf.signalPercent",
+        "audio_level": "audio.level",
+        "is_online": "status.online",
+        "errors": "errors"
+      },
+      "rename_body": {
+        "name": "{name}"
+      },
+      "telemetry_url": "",
+      "rename_url": ""
+    },
+    {
+      "id": "mic-2",
+      "default_name": "HANDHELD 2",
+      "receiver_name": "Rack A",
+      "channel_label": "A2",
+      "micboard_slot": 0,
+      "receiver_channel": 1,
+      "device_ip": "251mic2.cci.utk.edu",
+      "scheme": "tcp",
+      "port": 2202,
+      "telemetry_path": "/api/receivers/rack-a/channels/a2",
+      "telemetry_method": "GET",
+      "rename_path": "/api/receivers/rack-a/channels/a2/name",
+      "rename_method": "PUT",
+      "fields": {
+        "shure_name": "name",
+        "battery_percent": "battery.percent",
+        "signal_strength": "rf.signalPercent",
+        "audio_level": "audio.level",
+        "is_online": "status.online",
+        "errors": "errors"
+      },
+      "rename_body": {
+        "name": "{name}"
+      },
+      "telemetry_url": "",
+      "rename_url": ""
+    },
+    {
+      "id": "mic-3",
+      "default_name": "INTERVIEW 2",
+      "receiver_name": "Rack B",
+      "channel_label": "B4",
+      "micboard_slot": 0,
+      "receiver_channel": 1,
+      "device_ip": "251mic3.cci.utk.edu",
+      "scheme": "tcp",
+      "port": 2202,
+      "telemetry_path": "/api/receivers/rack-b/channels/b4",
+      "telemetry_method": "GET",
+      "rename_path": "/api/receivers/rack-b/channels/b4/name",
+      "rename_method": "PUT",
+      "fields": {
+        "shure_name": "name",
+        "battery_percent": "battery.percent",
+        "signal_strength": "rf.signalPercent",
+        "audio_level": "audio.level",
+        "is_online": "status.online",
+        "errors": "errors"
+      },
+      "rename_body": {
+        "name": "{name}"
+      },
+      "telemetry_url": "",
+      "rename_url": ""
+    },
+    {
+      "id": "mic-4",
+      "default_name": "MIC 4",
+      "receiver_name": "",
+      "channel_label": "",
+      "micboard_slot": 0,
+      "receiver_channel": 1,
+      "device_ip": "251mic4.cci.utk.edu",
+      "scheme": "tcp",
+      "port": 2202,
+      "telemetry_path": "",
+      "telemetry_method": "GET",
+      "rename_path": "",
+      "rename_method": "PUT",
+      "fields": {
+        "shure_name": "name",
+        "battery_percent": "battery.percent",
+        "signal_strength": "rf.signalPercent",
+        "audio_level": "audio.level",
+        "is_online": "status.online",
+        "errors": "errors"
+      },
+      "rename_body": {
+        "name": "{name}"
+      },
+      "telemetry_url": "",
+      "rename_url": ""
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[Unit]
+Description=Anchor Mics FastAPI service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/anchor-mics
+Environment=ANCHOR_MICS_SOURCE=qlxd
+Environment=ANCHOR_MICS_HOST=127.0.0.1
+Environment=ANCHOR_MICS_PORT=8010
+ExecStart=/opt/anchor-mics/.venv/bin/python /opt/anchor-mics/run.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

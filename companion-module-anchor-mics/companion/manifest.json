@@ -1,0 +1,27 @@
+{
+  "$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
+  "id": "anchor-mics",
+  "name": "anchor-mics",
+  "shortname": "Anchor Mics",
+  "description": "Pull live microphone assignments and telemetry from the Anchor Mics dashboard backend.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": "git+https://github.com/example/companion-module-anchor-mics.git",
+  "bugs": "https://github.com/example/companion-module-anchor-mics/issues",
+  "maintainers": [
+    {
+      "name": "Workspace user"
+    }
+  ],
+  "runtime": {
+    "type": "node22",
+    "api": "nodejs-ipc",
+    "apiVersion": "0.0.0",
+    "entrypoint": "../src/main.js"
+  },
+  "legacyIds": [],
+  "manufacturer": "Custom",
+  "products": ["Anchor Mics"],
+  "keywords": ["shure", "microphones", "monitoring", "assignments"]
+}
+
