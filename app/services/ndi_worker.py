@@ -48,7 +48,7 @@ def main() -> int:
 
     ndi: NDIlib | None = None
     receiver: NDIReceiver | None = None
-    last_capture_attempt = 0.0
+    last_video_encoded_at = 0.0
     fps_window_started_at = time.monotonic()
     fps_window_frames = 0
     actual_fps = 0.0
@@ -75,12 +75,7 @@ def main() -> int:
         )
 
         while not stop_path.exists():
-            elapsed = time.monotonic() - last_capture_attempt
             min_interval = 1.0 / NDI_PREVIEW_FPS
-            if elapsed < min_interval:
-                time.sleep(min_interval - elapsed)
-                continue
-            last_capture_attempt = time.monotonic()
 
             frame, frame_error = receiver.capture_jpeg(timeout_ms=NDI_CAPTURE_TIMEOUT_MS)
             if frame is None:
@@ -113,6 +108,10 @@ def main() -> int:
                     )
                 continue
 
+            elapsed = time.monotonic() - last_video_encoded_at
+            if elapsed < min_interval:
+                time.sleep(min_interval - elapsed)
+            last_video_encoded_at = time.monotonic()
             last_video_at = time.monotonic()
             fps_window_frames += 1
             fps_elapsed = last_video_at - fps_window_started_at
