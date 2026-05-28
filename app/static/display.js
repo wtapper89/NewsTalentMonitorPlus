@@ -7,6 +7,9 @@ const micStripEl = document.getElementById('micStrip')
 
 let refreshHandle = null
 let clockHandle = null
+let ndiPreviewHandle = null
+let ndiPreviewAbort = null
+let ndiPreviewObjectUrl = ''
 let previewSignature = ''
 let lastFontFamily = ''
 
@@ -122,10 +125,12 @@ function renderPreview(display) {
 
   if (signature === previewSignature) return
   previewSignature = signature
+  stopNdiPreview()
 
   if (previewMode === 'ndi') {
     if (sourceName) {
-      previewFrameEl.innerHTML = `<img src="/api/ndi/preview.mjpg?source=${encodeURIComponent(sourceName)}&t=${Date.now()}" alt="NDI preview feed" />`
+      previewFrameEl.innerHTML = '<img id="ndiPreviewImage" alt="NDI preview feed" />'
+      startNdiPreview()
       return
     }
   }
@@ -153,6 +158,57 @@ function renderPreview(display) {
   }
 
   previewFrameEl.innerHTML = `<iframe src="${escapeHtml(previewUrl)}" title="Preview feed" allow="autoplay; fullscreen"></iframe>`
+}
+
+function stopNdiPreview() {
+  if (ndiPreviewHandle) {
+    window.clearTimeout(ndiPreviewHandle)
+    ndiPreviewHandle = null
+  }
+  if (ndiPreviewAbort) {
+    ndiPreviewAbort.abort()
+    ndiPreviewAbort = null
+  }
+  if (ndiPreviewObjectUrl) {
+    URL.revokeObjectURL(ndiPreviewObjectUrl)
+    ndiPreviewObjectUrl = ''
+  }
+}
+
+function startNdiPreview() {
+  const img = document.getElementById('ndiPreviewImage')
+  if (!(img instanceof HTMLImageElement)) return
+
+  const pullFrame = async () => {
+    ndiPreviewAbort = new AbortController()
+    try {
+      const response = await fetch(`/api/ndi/latest.jpg?t=${Date.now()}`, {
+        cache: 'no-store',
+        signal: ndiPreviewAbort.signal,
+      })
+      if (response.ok) {
+        const blob = await response.blob()
+        const nextUrl = URL.createObjectURL(blob)
+        const previousUrl = ndiPreviewObjectUrl
+        img.src = nextUrl
+        ndiPreviewObjectUrl = nextUrl
+        if (previousUrl) {
+          window.setTimeout(() => URL.revokeObjectURL(previousUrl), 1000)
+        }
+      }
+    } catch (error) {
+      if (error?.name !== 'AbortError') {
+        previewSourceEl.textContent = errorText(error)
+      }
+    } finally {
+      ndiPreviewAbort = null
+      if (document.getElementById('ndiPreviewImage') === img) {
+        ndiPreviewHandle = window.setTimeout(pullFrame, 20)
+      }
+    }
+  }
+
+  pullFrame()
 }
 
 function renderState(state) {
@@ -201,6 +257,7 @@ async function start() {
 window.addEventListener('beforeunload', () => {
   if (refreshHandle) window.clearInterval(refreshHandle)
   if (clockHandle) window.clearInterval(clockHandle)
+  stopNdiPreview()
 })
 
 start()

@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -305,6 +305,23 @@ async def get_ndi_preview(request: Request) -> StreamingResponse:
             "Pragma": "no-cache",
             "Expires": "0",
             "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.get("/api/ndi/latest.jpg")
+async def get_ndi_latest(request: Request) -> Response:
+    frame = ndi_bridge_from(request).latest_frame()
+    if not frame:
+        raise HTTPException(status_code=404, detail="No NDI preview frame available")
+    return Response(
+        content=frame.jpeg,
+        media_type="image/jpeg",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+            "X-Frame-Captured-At": f"{frame.captured_at:.6f}",
         },
     )
 
