@@ -28,8 +28,8 @@ NDI_RECV_BANDWIDTH_HIGHEST = 100
 NDI_PREVIEW_MAX_WIDTH = 1280
 NDI_PREVIEW_FPS = 30.0
 NDI_PREVIEW_JPEG_QUALITY = 70
-NDI_CAPTURE_TIMEOUT_MS = 100
-NDI_STALE_RECONNECT_SECONDS = 2.5
+NDI_CAPTURE_TIMEOUT_MS = 1000
+NDI_STALE_RECONNECT_SECONDS = 10.0
 NDI_MAX_RAW_FRAME_BYTES = 48 * 1024 * 1024
 
 
@@ -221,7 +221,7 @@ class NDIReceiver:
             source_to_connect_to=source,
             color_format=NDI_RECV_COLOR_FORMAT_BGRX_BGRA,
             bandwidth=NDI_RECV_BANDWIDTH_HIGHEST,
-            allow_video_fields=False,
+            allow_video_fields=True,
         )
         self.recv_instance = self.ndi.lib.NDIlib_recv_create_v3(ctypes.byref(recv_create))
         if not self.recv_instance:
@@ -432,6 +432,7 @@ class NDIBridge:
             "seconds_since_frame": round(time.time() - frame.captured_at, 3) if frame else None,
             "preview_max_width": NDI_PREVIEW_MAX_WIDTH,
             "preview_fps": NDI_PREVIEW_FPS,
+            "actual_fps": status.get("actual_fps"),
             "thread_running": process_running,
             "worker_running": process_running,
             "worker_pid": self._process.pid if process_running and self._process else None,

@@ -215,8 +215,9 @@ function renderNdiStatus(display) {
   const frame = ndiStatus.has_frame
     ? `${ndiStatus.frame_width}x${ndiStatus.frame_height}, ${ndiStatus.seconds_since_frame}s ago`
     : 'no frame yet'
+  const fps = Number.isFinite(Number(ndiStatus.actual_fps)) ? ` | Actual FPS: ${Number(ndiStatus.actual_fps).toFixed(1)}` : ''
   const error = ndiStatus.last_error ? ` Error: ${escapeHtml(ndiStatus.last_error)}` : ''
-  return `Status: ${escapeHtml(ndiStatus.connection_status || 'unknown')} | Source: ${escapeHtml(source)} | Frame: ${escapeHtml(frame)}${error}`
+  return `Status: ${escapeHtml(ndiStatus.connection_status || 'unknown')} | Source: ${escapeHtml(source)} | Frame: ${escapeHtml(frame)}${fps}${error}`
 }
 
 function buildMicCards() {

@@ -49,6 +49,9 @@ def main() -> int:
     ndi: NDIlib | None = None
     receiver: NDIReceiver | None = None
     last_capture_attempt = 0.0
+    fps_window_started_at = time.monotonic()
+    fps_window_frames = 0
+    actual_fps = 0.0
     try:
         write_json(status_path, {"connection_status": "starting", "source_name": source_name})
         ndi = NDIlib()
@@ -67,6 +70,7 @@ def main() -> int:
                 "captured_at": None,
                 "preview_max_width": NDI_PREVIEW_MAX_WIDTH,
                 "preview_fps": NDI_PREVIEW_FPS,
+                "actual_fps": actual_fps,
             },
         )
 
@@ -90,6 +94,7 @@ def main() -> int:
                             "has_frame": frame_path.exists(),
                             "preview_max_width": NDI_PREVIEW_MAX_WIDTH,
                             "preview_fps": NDI_PREVIEW_FPS,
+                            "actual_fps": actual_fps,
                         },
                     )
                     return 1
@@ -103,11 +108,18 @@ def main() -> int:
                             "has_frame": frame_path.exists(),
                             "preview_max_width": NDI_PREVIEW_MAX_WIDTH,
                             "preview_fps": NDI_PREVIEW_FPS,
+                            "actual_fps": actual_fps,
                         },
-                )
+                    )
                 continue
 
             last_video_at = time.monotonic()
+            fps_window_frames += 1
+            fps_elapsed = last_video_at - fps_window_started_at
+            if fps_elapsed >= 2.0:
+                actual_fps = round(fps_window_frames / fps_elapsed, 1)
+                fps_window_started_at = last_video_at
+                fps_window_frames = 0
             write_bytes(frame_path, frame.jpeg)
             write_json(
                 status_path,
@@ -121,6 +133,7 @@ def main() -> int:
                     "captured_at": frame.captured_at,
                     "preview_max_width": NDI_PREVIEW_MAX_WIDTH,
                     "preview_fps": NDI_PREVIEW_FPS,
+                    "actual_fps": actual_fps,
                 },
             )
     except Exception as exc:
@@ -133,6 +146,7 @@ def main() -> int:
                 "has_frame": frame_path.exists(),
                 "preview_max_width": NDI_PREVIEW_MAX_WIDTH,
                 "preview_fps": NDI_PREVIEW_FPS,
+                "actual_fps": actual_fps,
             },
         )
         return 1
