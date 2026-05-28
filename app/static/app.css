@@ -587,6 +587,69 @@ button.secondary {
   color: var(--muted);
 }
 
+.ndi-panel {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.ndi-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ndi-panel-head strong,
+.ndi-panel-head span {
+  display: block;
+}
+
+.ndi-panel-head span,
+.ndi-source-button small,
+.ndi-empty,
+.ndi-status {
+  color: var(--muted);
+}
+
+.ndi-source-list {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.ndi-source-button {
+  display: flex;
+  min-height: 72px;
+  padding: 14px;
+  flex-direction: column;
+  align-items: start;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  text-align: left;
+}
+
+.ndi-source-button.is-selected {
+  border-color: rgba(86, 211, 255, 0.8);
+  background: rgba(86, 211, 255, 0.14);
+}
+
+.ndi-source-button span {
+  font-weight: 800;
+}
+
+.ndi-status {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 .config-actions {
   display: flex;
   gap: 14px;
@@ -646,7 +709,8 @@ button.secondary {
 
   .page-nav,
   .config-actions,
-  .config-card-head {
+  .config-card-head,
+  .ndi-panel-head {
     flex-direction: column;
     align-items: start;
   }

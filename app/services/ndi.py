@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import ctypes
 import ctypes.util
+import hashlib
+import json
 import logging
 import os
 import platform
-import threading
+import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,9 +19,18 @@ logger = logging.getLogger("anchor_mics.ndi")
 
 
 NDI_RECV_FRAME_TYPE_NONE = 0
-NDI_RECV_FRAME_TYPE_VIDEO = 2
-NDI_RECV_COLOR_FORMAT_BGRX_BGRA = 1
+NDI_RECV_FRAME_TYPE_VIDEO = 1
+NDI_RECV_FRAME_TYPE_AUDIO = 2
+NDI_RECV_FRAME_TYPE_METADATA = 3
+NDI_RECV_COLOR_FORMAT_BGRX_BGRA = 0
+NDI_RECV_BANDWIDTH_LOWEST = 0
 NDI_RECV_BANDWIDTH_HIGHEST = 100
+NDI_PREVIEW_MAX_WIDTH = 1280
+NDI_PREVIEW_FPS = 30.0
+NDI_PREVIEW_JPEG_QUALITY = 70
+NDI_CAPTURE_TIMEOUT_MS = 100
+NDI_STALE_RECONNECT_SECONDS = 2.5
+NDI_MAX_RAW_FRAME_BYTES = 48 * 1024 * 1024
 
 
 def fourcc(value: str) -> int:
@@ -190,10 +202,17 @@ class NDIlib:
 
 
 class NDIReceiver:
-    def __init__(self, ndi: NDIlib, source_name: str, jpeg_quality: int = 70) -> None:
+    def __init__(
+        self,
+        ndi: NDIlib,
+        source_name: str,
+        jpeg_quality: int = NDI_PREVIEW_JPEG_QUALITY,
+        max_width: int = NDI_PREVIEW_MAX_WIDTH,
+    ) -> None:
         self.ndi = ndi
         self.source_name = source_name
         self.jpeg_quality = max(1, min(95, int(jpeg_quality)))
+        self.max_width = max(240, int(max_width))
         self.recv_instance: ctypes.c_void_p | None = None
 
     def connect(self, timeout_ms: int = 5000) -> None:
@@ -214,7 +233,7 @@ class NDIReceiver:
             self.ndi.lib.NDIlib_recv_destroy(self.recv_instance)
             self.recv_instance = None
 
-    def capture_jpeg(self, timeout_ms: int = 1000) -> NDIFrame | None:
+    def capture_jpeg(self, timeout_ms: int = 1000) -> tuple[NDIFrame | None, str]:
         if not self.recv_instance:
             raise NDIUnavailableError("NDI receiver is not connected")
 
@@ -231,14 +250,16 @@ class NDIReceiver:
 
         try:
             if frame_type == NDI_RECV_FRAME_TYPE_VIDEO:
-                return self._video_to_jpeg(video)
-            return None
+                return self._video_to_jpeg(video), ""
+            return None, ""
+        except NDIUnavailableError as exc:
+            return None, str(exc)
         finally:
             if frame_type == NDI_RECV_FRAME_TYPE_VIDEO:
                 self.ndi.lib.NDIlib_recv_free_video_v2(self.recv_instance, ctypes.byref(video))
-            elif frame_type == 3:
+            elif frame_type == NDI_RECV_FRAME_TYPE_AUDIO:
                 self.ndi.lib.NDIlib_recv_free_audio_v3(self.recv_instance, ctypes.byref(audio))
-            elif frame_type == 4:
+            elif frame_type == NDI_RECV_FRAME_TYPE_METADATA:
                 self.ndi.lib.NDIlib_recv_free_metadata(self.recv_instance, ctypes.byref(metadata))
 
     def _find_source(self, timeout_ms: int) -> NDIlibSource:
@@ -256,7 +277,8 @@ class NDIReceiver:
 
     def _video_to_jpeg(self, video: NDIlibVideoFrameV2) -> NDIFrame:
         if video.FourCC not in {FOURCC_BGRX, FOURCC_BGRA}:
-            raise NDIUnavailableError(f"Unsupported NDI pixel format FourCC={video.FourCC}")
+            format_name = "".join(chr((video.FourCC >> shift) & 0xFF) for shift in (0, 8, 16, 24))
+            raise NDIUnavailableError(f"Unsupported NDI pixel format {format_name} FourCC={video.FourCC}")
         if video.xres <= 0 or video.yres <= 0 or not video.p_data:
             raise NDIUnavailableError("NDI returned an empty video frame")
 
@@ -265,6 +287,10 @@ class NDIReceiver:
         from PIL import Image
 
         raw_size = video.line_stride_in_bytes * video.yres
+        if raw_size > NDI_MAX_RAW_FRAME_BYTES:
+            raise NDIUnavailableError(
+                f"NDI frame is too large for Pi preview: {video.xres}x{video.yres}, {raw_size} bytes"
+            )
         raw = ctypes.string_at(video.p_data, raw_size)
         image = Image.frombytes(
             "RGB",
@@ -275,8 +301,11 @@ class NDIReceiver:
             video.line_stride_in_bytes,
             1,
         )
+        if image.width > self.max_width:
+            target_height = max(1, round(image.height * (self.max_width / image.width)))
+            image = image.resize((self.max_width, target_height), Image.Resampling.BILINEAR)
         output = BytesIO()
-        image.save(output, format="JPEG", quality=self.jpeg_quality, optimize=True)
+        image.save(output, format="JPEG", quality=self.jpeg_quality, optimize=False)
         return NDIFrame(
             jpeg=output.getvalue(),
             source_name=self.source_name,
@@ -288,13 +317,14 @@ class NDIReceiver:
 
 class NDIBridge:
     def __init__(self) -> None:
-        self._lock = threading.Lock()
-        self._frame: NDIFrame | None = None
+        self._base_dir = Path(os.getenv("ANCHOR_MICS_NDI_WORK_DIR", "/tmp/anchor-mics-ndi"))
         self._source_name = ""
         self._last_error = ""
         self._connection_status = "idle"
-        self._thread: threading.Thread | None = None
-        self._stop_event = threading.Event()
+        self._process: subprocess.Popen | None = None
+        self._worker_dir: Path | None = None
+        self._last_frame_mtime = 0.0
+        self._last_frame: NDIFrame | None = None
 
     def configure(self, display: dict[str, Any]) -> None:
         if str(display.get("preview_mode") or "").lower() != "ndi":
@@ -304,54 +334,109 @@ class NDIBridge:
         source_name = str(display.get("preview_source_name") or "").strip()
         if not source_name:
             self.stop()
-            with self._lock:
-                self._connection_status = "error"
-                self._last_error = "No NDI source name configured"
+            self._connection_status = "error"
+            self._last_error = "No NDI source name configured"
             return
 
-        with self._lock:
-            current_source = self._source_name
-            running = self._thread is not None and self._thread.is_alive()
-        if running and current_source == source_name:
+        if self._process and self._process.poll() is None and self._source_name == source_name:
             return
 
         self.stop()
-        self._stop_event.clear()
-        with self._lock:
-            self._source_name = source_name
-            self._connection_status = "starting"
-            self._last_error = ""
-            self._frame = None
-        self._thread = threading.Thread(target=self._run, args=(source_name,), daemon=True)
-        self._thread.start()
+        self._base_dir.mkdir(parents=True, exist_ok=True)
+        source_hash = hashlib.sha1(source_name.encode("utf-8")).hexdigest()[:12]
+        worker_dir = self._base_dir / source_hash
+        worker_dir.mkdir(parents=True, exist_ok=True)
+        for name in ("stop", "current.jpg", "status.json"):
+            try:
+                (worker_dir / name).unlink()
+            except FileNotFoundError:
+                pass
+
+        self._source_name = source_name
+        self._connection_status = "starting"
+        self._last_error = ""
+        self._worker_dir = worker_dir
+        self._last_frame = None
+        self._last_frame_mtime = 0.0
+        self._process = subprocess.Popen(
+            [sys.executable, "-m", "app.services.ndi_worker", source_name, str(worker_dir)],
+            cwd=str(Path(__file__).resolve().parents[2]),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+        )
 
     def stop(self) -> None:
-        thread = self._thread
-        if thread and thread.is_alive():
-            self._stop_event.set()
-            thread.join(timeout=2.0)
-        self._thread = None
-        self._stop_event.clear()
-        with self._lock:
-            if self._connection_status != "error":
-                self._connection_status = "idle"
+        process = self._process
+        worker_dir = self._worker_dir
+        if process and process.poll() is None:
+            if worker_dir:
+                try:
+                    (worker_dir / "stop").write_text("stop", encoding="utf-8")
+                except OSError:
+                    pass
+            try:
+                process.terminate()
+                process.wait(timeout=2.0)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=2.0)
+        self._process = None
+        if self._connection_status != "error":
+            self._connection_status = "idle"
 
     def latest_frame(self) -> NDIFrame | None:
-        with self._lock:
-            return self._frame
+        frame_path = self._frame_path()
+        if not frame_path:
+            return self._last_frame
+        try:
+            stat = frame_path.stat()
+        except FileNotFoundError:
+            return self._last_frame
+        if stat.st_mtime == self._last_frame_mtime and self._last_frame is not None:
+            return self._last_frame
+        try:
+            jpeg = frame_path.read_bytes()
+        except OSError:
+            return self._last_frame
+
+        status = self._read_status()
+        frame = NDIFrame(
+            jpeg=jpeg,
+            source_name=self._source_name,
+            width=int(status.get("frame_width") or 0),
+            height=int(status.get("frame_height") or 0),
+            captured_at=float(status.get("captured_at") or stat.st_mtime),
+        )
+        self._last_frame = frame
+        self._last_frame_mtime = stat.st_mtime
+        return frame
 
     def status(self) -> dict[str, Any]:
-        with self._lock:
-            frame = self._frame
-            return {
-                "source_name": self._source_name,
-                "connection_status": self._connection_status,
-                "last_error": self._last_error,
-                "has_frame": frame is not None,
-                "frame_width": frame.width if frame else 0,
-                "frame_height": frame.height if frame else 0,
-                "seconds_since_frame": round(time.time() - frame.captured_at, 3) if frame else None,
-            }
+        status = self._read_status()
+        frame = self.latest_frame()
+        process_running = self._process is not None and self._process.poll() is None
+        exit_code = None if process_running or self._process is None else self._process.returncode
+        connection_status = status.get("connection_status") or self._connection_status
+        last_error = status.get("last_error") or self._last_error
+        if exit_code is not None and connection_status not in {"idle", "error"}:
+            connection_status = "error"
+            last_error = f"NDI worker exited with status {exit_code}"
+        return {
+            "source_name": status.get("source_name") or self._source_name,
+            "connection_status": connection_status,
+            "last_error": last_error,
+            "has_frame": frame is not None,
+            "frame_width": frame.width if frame else int(status.get("frame_width") or 0),
+            "frame_height": frame.height if frame else int(status.get("frame_height") or 0),
+            "seconds_since_frame": round(time.time() - frame.captured_at, 3) if frame else None,
+            "preview_max_width": NDI_PREVIEW_MAX_WIDTH,
+            "preview_fps": NDI_PREVIEW_FPS,
+            "thread_running": process_running,
+            "worker_running": process_running,
+            "worker_pid": self._process.pid if process_running and self._process else None,
+            "worker_exit_code": exit_code,
+        }
 
     def discover_sources(self, timeout_ms: int = 2000) -> list[dict[str, str]]:
         ndi = NDIlib()
@@ -360,36 +445,18 @@ class NDIBridge:
         finally:
             ndi.destroy()
 
-    def _run(self, source_name: str) -> None:
-        ndi: NDIlib | None = None
-        receiver: NDIReceiver | None = None
-        try:
-            ndi = NDIlib()
-            receiver = NDIReceiver(ndi, source_name)
-            receiver.connect()
-            with self._lock:
-                self._connection_status = "connected"
-                self._last_error = ""
-            logger.info("connected ndi receiver source=%s", source_name)
+    def _frame_path(self) -> Path | None:
+        if not self._worker_dir:
+            return None
+        return self._worker_dir / "current.jpg"
 
-            while not self._stop_event.is_set():
-                frame = receiver.capture_jpeg(timeout_ms=1000)
-                if frame is None:
-                    continue
-                with self._lock:
-                    self._frame = frame
-                    self._connection_status = "connected"
-                    self._last_error = ""
-        except Exception as exc:
-            logger.warning("ndi receiver fault source=%s error=%s", source_name, exc)
-            with self._lock:
-                self._connection_status = "error"
-                self._last_error = str(exc)
-        finally:
-            if receiver:
-                receiver.close()
-            if ndi:
-                ndi.destroy()
+    def _read_status(self) -> dict[str, Any]:
+        if not self._worker_dir:
+            return {}
+        try:
+            return json.loads((self._worker_dir / "status.json").read_text(encoding="utf-8"))
+        except (FileNotFoundError, OSError, json.JSONDecodeError):
+            return {}
 
 
 def discover_ndi_sources(ndi: NDIlib, timeout_ms: int = 2000) -> list[dict[str, str]]:

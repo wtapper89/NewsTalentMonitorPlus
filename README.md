@@ -142,16 +142,21 @@ They provide:
 
 A Docker/pi-gen image build is in [`deploy/pi-image`](/Users/wtapper/Library/CloudStorage/OneDrive-UniversityofTennessee/Documents/CodexProjects/AnchorMics/deploy/pi-image/README.md#L1).
 
+Open Docker Desktop first and wait until the engine is running.
+
 Build the image with:
 
 ```bash
-./deploy/pi-image/build-image.sh
+./make-pi-image.command
 ```
 
-Build it with the NDI runtime included:
+That wrapper auto-detects the NDI SDK archive at `/Users/wtapper/Downloads/Install_NDI_SDK_v6_Linux.tar.gz`, caches it under `.pi-image-build/ndi/`, asks for license confirmation, and embeds the runtime into the image.
+
+If the SDK archive is somewhere else:
 
 ```bash
-ACCEPT_NDI_SDK_LICENSE=1 NDI_SDK_TARBALL=/path/to/Install_NDI_SDK_v6_Linux.tar.gz ./deploy/pi-image/build-image.sh
+./deploy/pi-image/prepare-ndi-sdk.sh /path/to/Install_NDI_SDK_v6_Linux.tar.gz
+./make-pi-image.command
 ```
 
 The resulting `.img.xz` in `.pi-image-build/pi-gen/deploy/` can be flashed with Raspberry Pi Imager using `Use custom`.

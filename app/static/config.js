@@ -25,6 +25,8 @@ let configState = {
   default_connection: {},
   mics: [],
 }
+let ndiSources = []
+let ndiStatus = null
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -95,6 +97,35 @@ function buildGlobalFields() {
           <span class="field-label">Font family</span>
           <input type="text" value="${escapeHtml(display.font_family ?? 'Gotham, Montserrat, Arial, sans-serif')}" data-global-field="display.font_family" />
         </label>
+      </div>
+      <div class="ndi-panel">
+        <div class="ndi-panel-head">
+          <div>
+            <strong>NDI sources</strong>
+            <span>${ndiSources.length ? `${ndiSources.length} found` : 'Scan to list sources'}</span>
+          </div>
+          <button type="button" class="secondary button-inline" id="refreshNdiStatusButton">Status</button>
+        </div>
+        <div class="ndi-source-list">
+          ${
+            ndiSources.length
+              ? ndiSources
+                  .map((source) => {
+                    const isSelected = source.name === String(display.preview_source_name || '').trim()
+                    return `
+                      <button type="button" class="ndi-source-button ${isSelected ? 'is-selected' : ''}" data-ndi-source="${escapeHtml(source.name)}">
+                        <span>${escapeHtml(source.name)}</span>
+                        <small>${escapeHtml(source.url || 'NDI source')}</small>
+                      </button>
+                    `
+                  })
+                  .join('')
+              : '<div class="ndi-empty">No scan results yet.</div>'
+          }
+        </div>
+        <div class="ndi-status">
+          ${renderNdiStatus(display)}
+        </div>
       </div>
     </article>
 
@@ -176,6 +207,18 @@ function buildGlobalFields() {
   `
 }
 
+function renderNdiStatus(display) {
+  if (!ndiStatus) {
+    return 'NDI status has not been checked yet.'
+  }
+  const source = ndiStatus.source_name || display.preview_source_name || 'none'
+  const frame = ndiStatus.has_frame
+    ? `${ndiStatus.frame_width}x${ndiStatus.frame_height}, ${ndiStatus.seconds_since_frame}s ago`
+    : 'no frame yet'
+  const error = ndiStatus.last_error ? ` Error: ${escapeHtml(ndiStatus.last_error)}` : ''
+  return `Status: ${escapeHtml(ndiStatus.connection_status || 'unknown')} | Source: ${escapeHtml(source)} | Frame: ${escapeHtml(frame)}${error}`
+}
+
 function buildMicCards() {
   if (!configState.mics.length) {
     micConfigsEl.innerHTML = '<div class="empty">No mic connection entries yet.</div>'
@@ -202,6 +245,10 @@ function buildMicCards() {
             <label class="stack">
               <span class="field-label">Display label</span>
               <input type="text" value="${escapeHtml(mic.default_name)}" data-mic-index="${index}" data-mic-field="default_name" />
+            </label>
+            <label class="stack">
+              <span class="field-label">Assigned to</span>
+              <input type="text" value="${escapeHtml(mic.assigned_to ?? '')}" data-mic-index="${index}" data-mic-field="assigned_to" placeholder="Lead Pastor" />
             </label>
             <label class="stack">
               <span class="field-label">Receiver label</span>
@@ -353,6 +400,10 @@ async function fetchConfig() {
 
 async function saveConfig() {
   const payload = normalizeForSave()
+  const assignmentDrafts = configState.mics.map((mic) => ({
+    id: String(mic.id || '').trim(),
+    assigned_to: String(mic.assigned_to || '').trim(),
+  }))
   const response = await fetch('/api/config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -366,7 +417,34 @@ async function saveConfig() {
 
   const result = await response.json()
   configState = result.config
+  ndiStatus = result.ndi_status || ndiStatus
+  await saveAssignments(assignmentDrafts)
+  applyAssignmentDrafts(assignmentDrafts)
+  await refreshNdiStatus()
   render()
+}
+
+function applyAssignmentDrafts(assignments) {
+  const byId = new Map(assignments.map((assignment) => [assignment.id, assignment.assigned_to]))
+  configState.mics = configState.mics.map((mic) => ({
+    ...mic,
+    assigned_to: byId.get(String(mic.id || '').trim()) ?? mic.assigned_to ?? '',
+  }))
+}
+
+async function saveAssignments(assignments) {
+  for (const assignment of assignments) {
+    if (!assignment.id) continue
+    const response = await fetch(`/api/mics/${encodeURIComponent(assignment.id)}/assignment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assigned_to: assignment.assigned_to }),
+    })
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: `Failed to save assignment for ${assignment.id}` }))
+      throw new Error(error.detail || `Failed to save assignment for ${assignment.id}`)
+    }
+  }
 }
 
 document.addEventListener('input', (event) => {
@@ -414,6 +492,26 @@ document.addEventListener('click', (event) => {
     return
   }
 
+  if (target.id === 'refreshNdiStatusButton') {
+    refreshNdiStatus()
+      .then(() => {
+        render()
+        saveStatus('NDI status refreshed.', 'ok')
+      })
+      .catch((error) => saveStatus(error.message, 'error'))
+    return
+  }
+
+  const ndiSourceButton = target.closest('[data-ndi-source]')
+  if (ndiSourceButton instanceof HTMLElement) {
+    configState.display = configState.display || {}
+    configState.display.preview_mode = 'ndi'
+    configState.display.preview_source_name = ndiSourceButton.dataset.ndiSource || ''
+    render()
+    saveStatus('NDI source selected. Save configuration to apply it.')
+    return
+  }
+
   if (target.dataset.removeMic) {
     const index = Number(target.dataset.removeMic)
     configState.mics.splice(index, 1)
@@ -430,13 +528,24 @@ async function scanNdiSources() {
     throw new Error(error.detail || 'NDI scan failed')
   }
   const payload = await response.json()
+  ndiSources = payload.sources || []
   const datalist = document.getElementById('ndiSources')
   if (datalist) {
-    datalist.innerHTML = (payload.sources || [])
+    datalist.innerHTML = ndiSources
       .map((source) => `<option value="${escapeHtml(source.name)}"></option>`)
       .join('')
   }
-  saveStatus(`${(payload.sources || []).length} NDI source(s) found.`, 'ok')
+  render()
+  saveStatus(`${ndiSources.length} NDI source(s) found.`, 'ok')
+}
+
+async function refreshNdiStatus() {
+  const response = await fetch('/api/ndi/status')
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'NDI status failed' }))
+    throw new Error(error.detail || 'NDI status failed')
+  }
+  ndiStatus = await response.json()
 }
 
 configFormEl.addEventListener('submit', async (event) => {

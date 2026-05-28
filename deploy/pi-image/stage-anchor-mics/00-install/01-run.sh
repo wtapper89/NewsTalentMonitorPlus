@@ -3,6 +3,7 @@ set -e
 
 install -d "${ROOTFS_DIR}/opt/anchor-mics"
 tar -xzf files/anchor-mics.tgz -C "${ROOTFS_DIR}/opt/anchor-mics"
+date -u +"%Y-%m-%dT%H:%M:%SZ" > "${ROOTFS_DIR}/opt/anchor-mics/IMAGE_BUILD_TIME"
 
 install -m 0755 files/start-kiosk.sh "${ROOTFS_DIR}/opt/anchor-mics/deploy/raspberry-pi/start-kiosk.sh"
 install -Dm 0644 files/anchor-mics.service "${ROOTFS_DIR}/etc/systemd/system/anchor-mics.service"
@@ -38,6 +39,7 @@ cd /opt/anchor-mics
 python3 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -r requirements.txt
+chown -R cci:cci /opt/anchor-mics
 ldconfig
 systemctl enable anchor-mics.service
 systemctl enable anchor-mics-kiosk.service

@@ -5,9 +5,9 @@ Wants=anchor-mics.service
 
 [Service]
 Type=simple
-User=pi
+User=cci
 Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/pi/.Xauthority
+Environment=XAUTHORITY=/home/cci/.Xauthority
 Environment=ANCHOR_MICS_KIOSK_URL=http://127.0.0.1:8010/display
 WorkingDirectory=/opt/anchor-mics
 ExecStart=/bin/bash /opt/anchor-mics/deploy/raspberry-pi/start-kiosk.sh

@@ -7,29 +7,51 @@ The output is an `.img.xz` file that can be written with Raspberry Pi Imager usi
 ## Requirements
 
 - Docker
+- Docker Desktop must be open and running before you start the build
 - Git
 - `rsync`
 - Enough disk space for a Raspberry Pi OS image build
 - Optional: NDI SDK Linux archive containing `libndi.so`
+
+The builder uses pi-gen's `bookworm-arm64` branch so the image is 64-bit and stays on the stable Raspberry Pi OS Bookworm path for Pi 5.
 
 ## Build
 
 From the repo root:
 
 ```bash
-./deploy/pi-image/build-image.sh
+./make-pi-image.command
 ```
 
-With the NDI runtime included:
+That command:
+
+- finds `/Users/wtapper/Downloads/Install_NDI_SDK_v6_Linux.tar.gz`
+- copies it into the untracked build cache at `.pi-image-build/ndi/`
+- asks you to confirm the NDI SDK license
+- builds the custom Raspberry Pi image with the NDI runtime embedded
+
+If you want to cache the SDK manually first:
+
+```bash
+./deploy/pi-image/prepare-ndi-sdk.sh /Users/wtapper/Downloads/Install_NDI_SDK_v6_Linux.tar.gz
+```
+
+Then build:
+
+```bash
+./make-pi-image.command
+```
+
+The lower-level builder still works directly:
 
 ```bash
 ACCEPT_NDI_SDK_LICENSE=1 NDI_SDK_TARBALL=/path/to/Install_NDI_SDK_v6_Linux.tar.gz ./deploy/pi-image/build-image.sh
 ```
 
-For the SDK archive currently on this Mac:
+Or, after the SDK is cached:
 
 ```bash
-ACCEPT_NDI_SDK_LICENSE=1 NDI_SDK_TARBALL=/Users/wtapper/Downloads/Install_NDI_SDK_v6_Linux.tar.gz ./deploy/pi-image/build-image.sh
+ACCEPT_NDI_SDK_LICENSE=1 ./deploy/pi-image/build-image.sh
 ```
 
 The image lands under:
@@ -37,6 +59,8 @@ The image lands under:
 ```bash
 .pi-image-build/pi-gen/deploy/
 ```
+
+Use the `image_YYYY-MM-DD-anchor-mics-pi.img.xz` file. The builder disables pi-gen's stock stage2/stage4 exports so this image includes `/opt/anchor-mics` and the systemd services.
 
 ## Default Image Behavior
 

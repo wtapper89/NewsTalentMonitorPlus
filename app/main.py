@@ -170,6 +170,12 @@ def ndi_bridge_from(request: Request) -> NDIBridge:
 def build_config_response(request: Request) -> dict:
     mapping = mapping_store_from(request).load()
     runtime_config = runtime_config_from(request)
+    service = service_from(request)
+    mics = []
+    for mic in mapping.get("mics", []):
+        mic_payload = dict(mic)
+        mic_payload["assigned_to"] = service.store.get_assignment(str(mic.get("id") or ""))
+        mics.append(mic_payload)
     return {
         "source": runtime_config.source,
         "mapping_file": str(runtime_config.mapping_file),
@@ -178,7 +184,7 @@ def build_config_response(request: Request) -> dict:
         "companion": mapping.get("companion", {}),
         "default_connection": mapping.get("default_connection", {}),
         "auth": mapping.get("auth", {}),
-        "mics": mapping.get("mics", []),
+        "mics": mics,
     }
 
 
@@ -222,9 +228,13 @@ async def get_config(request: Request) -> dict:
 async def save_config(payload: ConfigUpdateRequest, request: Request) -> dict:
     mapping_store_from(request).save(payload.model_dump())
     state = await service_from(request).refresh()
+    ndi_bridge = ndi_bridge_from(request)
+    if state.get("display", {}).get("preview_mode") != "ndi":
+        ndi_bridge.stop()
     return {
         "config": build_config_response(request),
         "state": state,
+        "ndi_status": ndi_bridge.status(),
     }
 
 
@@ -285,12 +295,17 @@ async def get_ndi_preview(request: Request) -> StreamingResponse:
                     + frame.jpeg
                     + b"\r\n"
                 )
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.01)
 
     return StreamingResponse(
         stream(),
         media_type="multipart/x-mixed-replace; boundary=frame",
-        headers={"Cache-Control": "no-store"},
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

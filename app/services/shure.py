@@ -279,6 +279,9 @@ class QlxdChannelState:
             return ""
         return ""
 
+    def has_recent_battery(self, now: float) -> bool:
+        return bool(self.battery_seen_at and (now - self.battery_seen_at) <= QLXD_BATTERY_STALE_SECONDS)
+
     def has_recent_audio_peak(self, now: float) -> bool:
         return self.peak_at > 0 and (now - self.peak_at) <= QLXD_AUDIO_PEAK_SECONDS
 
@@ -1083,6 +1086,11 @@ class QlxdAdapter(ShureAdapter):
             is_online = False
             errors.append("Receiver sample timeout")
 
+        battery_percent = state.battery_percent()
+        if is_online and not state.has_recent_battery(now):
+            is_online = False
+            errors.append("Transmitter off or battery unavailable")
+
         battery_alert = state.battery_alert(now)
         if battery_alert:
             errors.append(battery_alert)
@@ -1102,7 +1110,7 @@ class QlxdAdapter(ShureAdapter):
             shure_name=str(state.name or mic_config.get("default_name", mic_config["id"])).strip(),
             receiver_name=str(mic_config.get("receiver_name", "")),
             channel_label=str(mic_config.get("channel_label", "")),
-            battery_percent=state.battery_percent(),
+            battery_percent=battery_percent,
             signal_strength=state.rf_level,
             audio_level=state.audio_level,
             is_online=is_online,
