@@ -450,7 +450,7 @@ class QlxdTelemetryTests(unittest.TestCase):
         self.assertEqual(state.rf_level, 30)
         self.assertEqual(state.audio_level, 80)
         self.assertTrue(state.has_recent_audio_peak(state.peak_at))
-        self.assertEqual(state.battery_alert(state.battery_seen_at), "Battery replace soon")
+        self.assertEqual(state.battery_alert(state.battery_seen_at), "")
 
     def test_qlxd_adapter_builds_warning_snapshot_from_cached_state(self) -> None:
         class FakeRuntime:
@@ -505,7 +505,7 @@ class QlxdTelemetryTests(unittest.TestCase):
         self.assertEqual(snapshot.battery_percent, 40)
         self.assertGreater(snapshot.signal_strength, 0)
         self.assertNotIn("Low battery", snapshot.errors)
-        self.assertIn("Battery replace soon", snapshot.errors)
+        self.assertNotIn("Battery replace soon", snapshot.errors)
         self.assertIn("Audio peak", snapshot.errors)
         self.assertIn("Encryption mismatch", snapshot.errors)
 

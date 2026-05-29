@@ -275,10 +275,6 @@ class QlxdChannelState:
             percent = clamp((level / 5) * 100, 0, 100, fallback=0) if 0 <= level <= 5 else 0
             if percent <= LOW_BATTERY_PERCENT:
                 return "Low battery"
-            if level == 3:
-                return "Battery replace soon"
-            if 1 <= level <= 2:
-                return "Battery replace soon"
             return ""
         return ""
 
@@ -949,11 +945,14 @@ class MicboardAdapter(ShureAdapter):
         status_messages = {
             "TX_COM_ERROR": "Transmitter unavailable",
             "RX_COM_ERROR": "Receiver communication error",
-            "REPLACE": "Battery replace soon",
             "AUDIO_PEAK": "Audio peak",
         }
         if tx_status == "CRITICAL":
-            errors.append("Low battery" if battery_percent <= LOW_BATTERY_PERCENT else "Battery replace soon")
+            if battery_percent <= LOW_BATTERY_PERCENT:
+                errors.append("Low battery")
+        elif tx_status == "REPLACE":
+            if battery_percent <= LOW_BATTERY_PERCENT:
+                errors.append("Low battery")
         elif tx_status and tx_status not in {"CONNECTED", "OK", "NORMAL"}:
             errors.append(status_messages.get(tx_status, humanize_status(tx_status)))
 
