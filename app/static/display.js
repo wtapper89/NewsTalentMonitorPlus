@@ -82,6 +82,14 @@ function photoDataAttributes(urls) {
   return escapeHtml(JSON.stringify(urls || []))
 }
 
+function nameFontSize(name) {
+  const length = String(name || '').length
+  if (length >= 24) return 'clamp(1rem, 1.2vw, 1.55rem)'
+  if (length >= 18) return 'clamp(1.08rem, 1.35vw, 1.8rem)'
+  if (length >= 14) return 'clamp(1.2rem, 1.55vw, 2.05rem)'
+  return ''
+}
+
 function renderMicTiles(mics) {
   if (!Array.isArray(mics) || !mics.length) {
     micStripEl.innerHTML = `
@@ -113,11 +121,13 @@ function renderMicTiles(mics) {
         ? `<img class="anchor-photo" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(title)}" data-photo-urls="${photoDataAttributes(photoUrls)}" data-photo-index="0" onerror="handleAnchorPhotoError(this);" />`
         : ''
       const personClass = photoUrl ? 'has-photo' : 'no-photo'
+      const fontSize = nameFontSize(title)
+      const fontStyle = fontSize ? ` style="--name-font-size: ${escapeHtml(fontSize)}"` : ''
       return `
         <article class="mic-tile ${escapeHtml(mic.health)}">
           <div class="mic-person ${personClass}">
             ${photoMarkup}
-            <div class="mic-person-text">
+            <div class="mic-person-text"${fontStyle}>
               <h2 class="mic-title">${escapeHtml(title)}</h2>
               <div class="mic-subtitle">${escapeHtml(subtitle)}</div>
             </div>
