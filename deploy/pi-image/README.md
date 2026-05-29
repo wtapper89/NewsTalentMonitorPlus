@@ -17,11 +17,13 @@ The builder uses pi-gen's `bookworm-arm64` branch so the image is 64-bit and sta
 
 ## Build
 
-On Windows, use the plain-English setup guide first:
+Most Windows users should not build this image. They should flash a prepared `.img.xz` with Raspberry Pi Imager:
 
 ```text
 docs/WINDOWS_SETUP.md
 ```
+
+This build process is for maintainers creating that prepared image on a Mac or Linux machine with Docker.
 
 From the repo root:
 
@@ -71,7 +73,7 @@ Use the `image_YYYY-MM-DD-anchor-mics-pi.img.xz` file. The builder disables pi-g
 ## Default Image Behavior
 
 - Hostname: `anchor-mics`
-- User: `pi`
+- User: `cci`
 - Password: `anchor`
 - App URL: `http://127.0.0.1:8010/display`
 - Config GUI: `http://<pi-ip>:8010/config`
@@ -82,4 +84,4 @@ Change the password after first boot.
 
 The app uses the NDI SDK runtime dynamically through `libndi.so`. The repo does not include the SDK runtime because it is proprietary.
 
-If you build without `NDI_SDK_TARBALL`, the image still boots and runs the app, but the NDI preview endpoint will report that the NDI runtime is missing until you install it on the Pi.
+If you build without `NDI_SDK_TARBALL`, the image still boots and runs the app. A Windows user can copy the Linux SDK archive and `ACCEPT_NDI_SDK_LICENSE.txt` to the flashed boot drive under `NewsTalentMonitor/`; the Pi will install the NDI runtime on first boot.

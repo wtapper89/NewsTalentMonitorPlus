@@ -6,8 +6,10 @@ tar -xzf files/anchor-mics.tgz -C "${ROOTFS_DIR}/opt/anchor-mics"
 date -u +"%Y-%m-%dT%H:%M:%SZ" > "${ROOTFS_DIR}/opt/anchor-mics/IMAGE_BUILD_TIME"
 
 install -m 0755 files/start-kiosk.sh "${ROOTFS_DIR}/opt/anchor-mics/deploy/raspberry-pi/start-kiosk.sh"
+install -m 0755 files/install-ndi-from-boot.sh "${ROOTFS_DIR}/opt/anchor-mics/deploy/raspberry-pi/install-ndi-from-boot.sh"
 install -Dm 0644 files/anchor-mics.service "${ROOTFS_DIR}/etc/systemd/system/anchor-mics.service"
 install -Dm 0644 files/anchor-mics-kiosk.service "${ROOTFS_DIR}/etc/systemd/system/anchor-mics-kiosk.service"
+install -Dm 0644 files/news-talent-monitor-ndi-install.service "${ROOTFS_DIR}/etc/systemd/system/news-talent-monitor-ndi-install.service"
 
 if [ -f files/ndi-sdk.tar.gz ]; then
   install -d "${ROOTFS_DIR}/tmp/ndi-installer" "${ROOTFS_DIR}/tmp/ndi-sdk"
@@ -43,6 +45,7 @@ chown -R cci:cci /opt/anchor-mics
 ldconfig
 systemctl enable anchor-mics.service
 systemctl enable anchor-mics-kiosk.service
+systemctl enable news-talent-monitor-ndi-install.service
 EOF
 
 rm -rf "${ROOTFS_DIR}/tmp/ndi-installer" "${ROOTFS_DIR}/tmp/ndi-sdk"

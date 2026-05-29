@@ -38,7 +38,7 @@ The goal is simple: give talent and operators more context using hardware you pr
 
 ## First Setup
 
-For a step-by-step Windows PC setup, including Docker Desktop, the NDI SDK location, building the Pi image, flashing the image, and running the Windows photo server, start here:
+For a step-by-step Windows PC setup using Raspberry Pi Imager, including where to place the NDI SDK archive and how to run the Windows photo server, start here:
 
 ```text
 docs/WINDOWS_SETUP.md
@@ -207,15 +207,15 @@ http://<pi-ip-address>:8010/api/ndi/status
 
 News Talent Monitor+ only marks a mic as low battery at `10%` or below. If a receiver reports another warning status, update to the latest build and restart the Pi service.
 
-## Building a Custom Pi Image
+## Raspberry Pi Image
 
-If you want a flashable image with the app already installed, use:
+Most users should download a prepared `.img.xz` image and flash it with Raspberry Pi Imager:
 
-```bash
-./make-pi-image.command
+```text
+https://www.raspberrypi.com/software/
 ```
 
-Docker Desktop must be open first. If you have the NDI SDK Linux archive in Downloads, the builder can embed the NDI runtime after you confirm the SDK license.
+The Windows setup guide explains how to copy the NDI SDK archive onto the flashed boot drive so the Pi can install the NDI runtime on first boot.
 
 More details are in:
 
@@ -224,6 +224,8 @@ docs/WINDOWS_SETUP.md
 deploy/pi-image/README.md
 deploy/raspberry-pi/README.md
 ```
+
+Maintainers who need to create a new prepared image can still use the advanced Docker/pi-gen builder on Mac or Linux.
 
 ## Legal And Licensing Notes
 

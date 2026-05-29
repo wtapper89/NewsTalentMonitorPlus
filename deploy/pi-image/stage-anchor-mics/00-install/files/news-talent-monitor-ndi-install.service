@@ -1,0 +1,13 @@
+[Unit]
+Description=Install News Talent Monitor+ NDI runtime from boot partition
+DefaultDependencies=no
+After=local-fs.target
+Before=anchor-mics.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/anchor-mics/deploy/raspberry-pi/install-ndi-from-boot.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
