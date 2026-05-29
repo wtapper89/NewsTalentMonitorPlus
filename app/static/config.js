@@ -135,7 +135,7 @@ function buildGlobalFields() {
       <div class="config-card-head">
         <div>
           <h3>Companion source</h3>
-          <p>Read show title and per-mic anchor assignments from Companion variables.</p>
+          <p>Read Now, Next, and per-mic anchor assignments from Companion variables.</p>
         </div>
       </div>
       <div class="config-card-grid">
@@ -155,12 +155,16 @@ function buildGlobalFields() {
           <input type="text" value="${escapeHtml(companion.connection_label ?? 'Cuez')}" data-global-field="companion.connection_label" />
         </label>
         <label class="stack">
-          <span class="field-label">Variable name</span>
+          <span class="field-label">Show title variable</span>
           <input type="text" value="${escapeHtml(companion.variable_name ?? '')}" data-global-field="companion.variable_name" placeholder="segment_title" />
         </label>
         <label class="stack">
-          <span class="field-label">On-air source variable</span>
+          <span class="field-label">Now source variable</span>
           <input type="text" value="${escapeHtml(companion.on_air_source_variable_name ?? '')}" data-global-field="companion.on_air_source_variable_name" placeholder="CurrentSource" />
+        </label>
+        <label class="stack">
+          <span class="field-label">Next source variable</span>
+          <input type="text" value="${escapeHtml(companion.next_source_variable_name ?? '')}" data-global-field="companion.next_source_variable_name" placeholder="NextSource" />
         </label>
       </div>
     </article>
@@ -409,6 +413,7 @@ function normalizeForSave() {
       connection_label: String(configState.companion.connection_label || 'Cuez').trim(),
       variable_name: String(configState.companion.variable_name || '').trim(),
       on_air_source_variable_name: String(configState.companion.on_air_source_variable_name || '').trim(),
+      next_source_variable_name: String(configState.companion.next_source_variable_name || '').trim(),
     },
     anchor_photos: {
       enabled: Boolean(configState.anchor_photos.enabled),

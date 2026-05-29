@@ -242,13 +242,14 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(state["display"]["show_title"], "Election Special")
         self.assertEqual(state["display"]["show_title_source"], "companion")
 
-    async def test_companion_variable_can_drive_on_air_source(self) -> None:
+    async def test_companion_variables_can_drive_now_and_next_sources(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
-            self.assertEqual(
-                str(request.url),
-                "http://127.0.0.1:8000/api/variable/custom/OnAir/value",
-            )
-            return httpx.Response(200, json="Studio Camera 2")
+            values = {
+                "http://127.0.0.1:8000/api/variable/custom/OnAir/value": "Studio Camera 2",
+                "http://127.0.0.1:8000/api/variable/custom/NextUp/value": "Weather Center",
+            }
+            self.assertIn(str(request.url), values)
+            return httpx.Response(200, json=values[str(request.url)])
 
         with tempfile.TemporaryDirectory() as temp_dir:
             mapping_file = Path(temp_dir) / "mapping.json"
@@ -259,6 +260,7 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
                         "base_url": "http://127.0.0.1:8000",
                         "connection_label": "custom",
                         "on_air_source_variable_name": "OnAir",
+                        "next_source_variable_name": "NextUp",
                     },
                 }
             )
@@ -277,6 +279,7 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
             await client.aclose()
 
         self.assertEqual(state["display"]["on_air_source_name"], "Studio Camera 2")
+        self.assertEqual(state["display"]["next_source_name"], "Weather Center")
 
     async def test_companion_variable_can_drive_mic_assignment(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
@@ -501,7 +504,8 @@ class QlxdTelemetryTests(unittest.TestCase):
         self.assertEqual(snapshot.shure_name, "HOST MIC")
         self.assertEqual(snapshot.battery_percent, 40)
         self.assertGreater(snapshot.signal_strength, 0)
-        self.assertIn("Low battery", snapshot.errors)
+        self.assertNotIn("Low battery", snapshot.errors)
+        self.assertIn("Battery replace soon", snapshot.errors)
         self.assertIn("Audio peak", snapshot.errors)
         self.assertIn("Encryption mismatch", snapshot.errors)
 
@@ -615,7 +619,7 @@ class MicboardAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(snapshots[0].is_online)
         self.assertEqual(snapshots[1].receiver_name, "Rack B")
         self.assertEqual(snapshots[1].battery_percent, 20)
-        self.assertIn("Low battery", snapshots[1].errors)
+        self.assertNotIn("Low battery", snapshots[1].errors)
 
     async def test_refresh_returns_offline_snapshots_when_micboard_request_fails(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:

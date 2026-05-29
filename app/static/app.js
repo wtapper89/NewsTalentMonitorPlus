@@ -34,7 +34,7 @@ function connectionLabel(status) {
 
 function meterClass(mic, key) {
   if (!mic.is_online) return 'offline'
-  if (key === 'battery_percent' && mic.battery_percent <= 25) return 'warning'
+  if (key === 'battery_percent' && mic.battery_percent <= 10) return 'warning'
   if (key === 'signal_strength' && mic.signal_strength <= 30) return 'warning'
   return ''
 }

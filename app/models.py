@@ -4,6 +4,9 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 
 
+LOW_BATTERY_PERCENT = 10
+
+
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -32,7 +35,7 @@ class MicSnapshot:
     def health(self) -> str:
         if not self.is_online:
             return "offline"
-        if self.errors or self.battery_percent <= 20 or self.signal_strength <= 25:
+        if self.errors or self.battery_percent <= LOW_BATTERY_PERCENT or self.signal_strength <= 25:
             return "warning"
         return "ok"
 
@@ -41,4 +44,3 @@ class MicSnapshot:
         payload["display_name"] = self.display_name
         payload["health"] = self.health
         return payload
-

@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 import httpx
 
-from app.models import MicSnapshot
+from app.models import LOW_BATTERY_PERCENT, MicSnapshot
 from app.services.photos import AnchorPhotoResolver
 from app.store import DEFAULT_ANCHOR_PHOTOS, DEFAULT_COMPANION, DEFAULT_DISPLAY, MappingStore
 from app.store import StateStore
@@ -146,7 +146,7 @@ class DashboardService:
             "total": len(mic_payload),
             "assigned": sum(1 for mic in mic_payload if mic["assigned_to"]),
             "offline": sum(1 for mic in mic_payload if not mic["is_online"]),
-            "low_battery": sum(1 for mic in mic_payload if mic["battery_percent"] <= 25),
+            "low_battery": sum(1 for mic in mic_payload if mic["battery_percent"] <= LOW_BATTERY_PERCENT),
             "with_errors": sum(1 for mic in mic_payload if mic["errors"]),
         }
         alerts = []
@@ -266,6 +266,8 @@ class DashboardService:
             "companion_variable_name": DEFAULT_COMPANION["variable_name"],
             "on_air_source_name": "",
             "on_air_source_variable_name": DEFAULT_COMPANION["on_air_source_variable_name"],
+            "next_source_name": "",
+            "next_source_variable_name": DEFAULT_COMPANION["next_source_variable_name"],
             "anchor_photos_enabled": DEFAULT_ANCHOR_PHOTOS["enabled"],
             "anchor_photos_base_url": DEFAULT_ANCHOR_PHOTOS["base_url"],
             "anchor_photos_share_path": DEFAULT_ANCHOR_PHOTOS["share_path"],
@@ -285,6 +287,8 @@ class DashboardService:
         show_title_error = ""
         on_air_source_name = ""
         on_air_source_error = ""
+        next_source_name = ""
+        next_source_error = ""
 
         if (
             str(display.get("show_title_mode") or "manual").lower() == "companion"
@@ -333,6 +337,26 @@ class DashboardService:
                 on_air_source_name = str(self._display_context.get("on_air_source_name") or "")
                 on_air_source_error = str(exc)
 
+        if (
+            companion.get("enabled")
+            and str(companion.get("base_url") or "").strip()
+            and str(companion.get("connection_label") or "").strip()
+            and str(companion.get("next_source_variable_name") or "").strip()
+        ):
+            try:
+                next_connection_label, next_variable_name = self._companion_lookup_parts(
+                    companion,
+                    str(companion["next_source_variable_name"]),
+                )
+                next_source_name = await self._fetch_companion_variable(
+                    str(companion["base_url"]),
+                    next_connection_label,
+                    next_variable_name,
+                )
+            except Exception as exc:
+                next_source_name = str(self._display_context.get("next_source_name") or "")
+                next_source_error = str(exc)
+
         return {
             "show_title": show_title or manual_title,
             "show_title_source": show_title_source,
@@ -351,6 +375,9 @@ class DashboardService:
             "on_air_source_name": on_air_source_name,
             "on_air_source_error": on_air_source_error,
             "on_air_source_variable_name": str(companion.get("on_air_source_variable_name") or ""),
+            "next_source_name": next_source_name,
+            "next_source_error": next_source_error,
+            "next_source_variable_name": str(companion.get("next_source_variable_name") or ""),
             "anchor_photos_enabled": bool((mapping.get("anchor_photos") or {}).get("enabled")),
             "anchor_photos_base_url": str((mapping.get("anchor_photos") or {}).get("base_url") or ""),
             "anchor_photos_share_path": str((mapping.get("anchor_photos") or {}).get("share_path") or ""),

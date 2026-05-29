@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from app.models import MicSnapshot
+from app.models import LOW_BATTERY_PERCENT, MicSnapshot
 from app.store import MappingStore
 
 
@@ -272,10 +272,13 @@ class QlxdChannelState:
     def battery_alert(self, now: float) -> str:
         if self.battery_seen_at and (now - self.battery_seen_at) <= QLXD_BATTERY_STALE_SECONDS:
             level = self.battery if self.battery != 255 else self.previous_battery
+            percent = clamp((level / 5) * 100, 0, 100, fallback=0) if 0 <= level <= 5 else 0
+            if percent <= LOW_BATTERY_PERCENT:
+                return "Low battery"
             if level == 3:
                 return "Battery replace soon"
-            if 0 <= level <= 2:
-                return "Low battery"
+            if 1 <= level <= 2:
+                return "Battery replace soon"
             return ""
         return ""
 
@@ -689,7 +692,7 @@ class MockShureAdapter(ShureAdapter):
 
             is_online = not (index == 7 and self._tick % 14 == 0)
             errors = []
-            if mic["battery_percent"] <= 20:
+            if mic["battery_percent"] <= LOW_BATTERY_PERCENT:
                 errors.append("Low battery")
             if mic["signal_strength"] <= 28:
                 errors.append("RF drop risk")
@@ -946,18 +949,19 @@ class MicboardAdapter(ShureAdapter):
         status_messages = {
             "TX_COM_ERROR": "Transmitter unavailable",
             "RX_COM_ERROR": "Receiver communication error",
-            "CRITICAL": "Low battery",
             "REPLACE": "Battery replace soon",
             "AUDIO_PEAK": "Audio peak",
         }
-        if tx_status and tx_status not in {"CONNECTED", "OK", "NORMAL"}:
+        if tx_status == "CRITICAL":
+            errors.append("Low battery" if battery_percent <= LOW_BATTERY_PERCENT else "Battery replace soon")
+        elif tx_status and tx_status not in {"CONNECTED", "OK", "NORMAL"}:
             errors.append(status_messages.get(tx_status, humanize_status(tx_status)))
 
         encryption_status = str(tx_raw.get("ENCRYPTION_STATUS", "") or "").strip().upper()
         if encryption_status and encryption_status not in {"OK", "ON", "OFF"}:
             errors.append(f"Encryption {humanize_status(encryption_status)}")
 
-        if battery_percent and battery_percent <= 20:
+        if battery_percent and battery_percent <= LOW_BATTERY_PERCENT:
             errors.append("Low battery")
 
         is_online = receiver_status == "CONNECTED" and tx_status not in {"TX_COM_ERROR", "RX_COM_ERROR"}

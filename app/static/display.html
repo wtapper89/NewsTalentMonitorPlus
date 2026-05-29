@@ -17,12 +17,15 @@
         <div class="clock-block">
           <span class="clock-time" id="clockTime">--:--:-- --</span>
         </div>
-        <div class="title-block">
-          <h1 class="show-title" id="showTitle">ANCHOR MICS</h1>
-        </div>
-        <div class="date-block">
-          <span class="on-air-source" id="onAirSource"></span>
-          <span class="show-date" id="showDate">---</span>
+        <div class="source-board" aria-label="Current rundown sources">
+          <section class="source-panel source-panel-now">
+            <span class="source-label">Now</span>
+            <span class="source-name" id="nowSource">---</span>
+          </section>
+          <section class="source-panel source-panel-next">
+            <span class="source-label">Next</span>
+            <span class="source-name" id="nextSource">---</span>
+          </section>
         </div>
       </header>
 

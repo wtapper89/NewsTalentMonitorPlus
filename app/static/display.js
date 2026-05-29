@@ -1,7 +1,6 @@
 const clockTimeEl = document.getElementById('clockTime')
-const showDateEl = document.getElementById('showDate')
-const showTitleEl = document.getElementById('showTitle')
-const onAirSourceEl = document.getElementById('onAirSource')
+const nowSourceEl = document.getElementById('nowSource')
+const nextSourceEl = document.getElementById('nextSource')
 const previewFrameEl = document.getElementById('previewFrame')
 const micStripEl = document.getElementById('micStrip')
 
@@ -39,13 +38,6 @@ function updateClock() {
     second: '2-digit',
     hour12: true,
   })
-  showDateEl.textContent = now
-    .toLocaleDateString([], {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    })
-    .toUpperCase()
 }
 
 function batteryBars(percent) {
@@ -56,7 +48,7 @@ function batteryBars(percent) {
 function tileStatusMessage(mic) {
   if (!mic.is_online) return 'OFF'
   if (Array.isArray(mic.errors) && mic.errors.length) return String(mic.errors[0] || '').toUpperCase()
-  if (Number(mic.battery_percent || 0) <= 20) return 'LOW BATTERY'
+  if (Number(mic.battery_percent || 0) <= 10) return 'LOW BATTERY'
   return ''
 }
 
@@ -256,9 +248,8 @@ function startNdiPreview() {
 
 function renderState(state) {
   const display = state.display || {}
-  const titleText = String(display.show_title || display.manual_show_title || 'Anchor Mics').trim()
-  showTitleEl.textContent = titleText.toUpperCase()
-  onAirSourceEl.textContent = String(display.on_air_source_name || '').trim().toUpperCase()
+  nowSourceEl.textContent = String(display.on_air_source_name || '').trim().toUpperCase() || '---'
+  nextSourceEl.textContent = String(display.next_source_name || '').trim().toUpperCase() || '---'
   renderPreview(display)
   renderMicTiles(state.mics || [])
 
@@ -285,15 +276,15 @@ async function start() {
   try {
     await fetchState()
   } catch (error) {
-    showTitleEl.textContent = 'ANCHOR MICS'
-    onAirSourceEl.textContent = errorText(error)
+    nowSourceEl.textContent = errorText(error)
+    nextSourceEl.textContent = '---'
     renderPreview({ preview_mode: 'placeholder', preview_source_name: 'Preview unavailable' })
     renderMicTiles([])
   }
 
   refreshHandle = window.setInterval(() => {
     fetchState().catch((error) => {
-      onAirSourceEl.textContent = errorText(error)
+      nowSourceEl.textContent = errorText(error)
     })
   }, 2000)
 }
