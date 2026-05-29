@@ -272,6 +272,48 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(state["mics"][0]["assigned_to"], "John Smith")
 
+    async def test_companion_assignment_accepts_wrapped_custom_variable(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            self.assertEqual(
+                str(request.url),
+                "http://127.0.0.1:8000/api/variable/custom/Mic1/value",
+            )
+            return httpx.Response(200, json="John Smith")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mapping_file = Path(temp_dir) / "mapping.json"
+            MappingStore(mapping_file).save(
+                {
+                    "companion": {
+                        "enabled": True,
+                        "base_url": "http://127.0.0.1:8000",
+                        "connection_label": "Cuez",
+                    },
+                    "mics": [
+                        {
+                            "id": "mic-1",
+                            "default_name": "MIC 1",
+                            "assignment_variable_name": "$(custom:Mic1)",
+                        }
+                    ],
+                }
+            )
+            client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            service = DashboardService(
+                MockShureAdapter(),
+                StateStore(Path(temp_dir) / "state.json"),
+                "mock",
+                2,
+                mapping_store=MappingStore(mapping_file),
+                client=client,
+            )
+
+            state = await service.refresh()
+            await service.close()
+            await client.aclose()
+
+        self.assertEqual(state["mics"][0]["assigned_to"], "John Smith")
+
     async def test_state_includes_trimmed_telemetry_history(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             state_file = Path(temp_dir) / "state.json"

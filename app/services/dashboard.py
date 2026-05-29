@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import time
 from collections import deque
 from copy import deepcopy
@@ -287,10 +288,14 @@ class DashboardService:
             and str(companion.get("variable_name") or "").strip()
         ):
             try:
+                title_connection_label, title_variable_name = self._companion_lookup_parts(
+                    companion,
+                    str(companion["variable_name"]),
+                )
                 show_title = await self._fetch_companion_variable(
                     str(companion["base_url"]),
-                    str(companion["connection_label"]),
-                    str(companion["variable_name"]),
+                    title_connection_label,
+                    title_variable_name,
                 )
                 if show_title:
                     show_title_source = "companion"
@@ -329,11 +334,23 @@ class DashboardService:
             or not variable_name.strip()
         ):
             return ""
+        connection_label, resolved_variable_name = self._companion_lookup_parts(companion, variable_name)
         return await self._fetch_companion_variable(
             str(companion["base_url"]),
-            str(companion["connection_label"]),
-            variable_name,
+            connection_label,
+            resolved_variable_name,
         )
+
+    @staticmethod
+    def _companion_lookup_parts(companion: dict, variable_name: str) -> tuple[str, str]:
+        raw_variable = variable_name.strip()
+        wrapped = re.fullmatch(r"\$\(([^:()]+):([^()]+)\)", raw_variable)
+        if wrapped:
+            return wrapped.group(1).strip(), wrapped.group(2).strip()
+        prefixed = re.fullmatch(r"([^:()]+):(.+)", raw_variable)
+        if prefixed:
+            return prefixed.group(1).strip(), prefixed.group(2).strip()
+        return str(companion.get("connection_label") or "").strip(), raw_variable
 
     async def _fetch_companion_variable(self, base_url: str, connection_label: str, variable_name: str) -> str:
         url = (
