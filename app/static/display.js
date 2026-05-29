@@ -78,6 +78,10 @@ function batteryMarkup(mic) {
   `
 }
 
+function photoDataAttributes(urls) {
+  return escapeHtml(JSON.stringify(urls || []))
+}
+
 function renderMicTiles(mics) {
   if (!Array.isArray(mics) || !mics.length) {
     micStripEl.innerHTML = `
@@ -101,9 +105,12 @@ function renderMicTiles(mics) {
       const main = message
         ? `<div class="mic-message">${escapeHtml(message)}</div>`
         : batteryMarkup(mic)
-      const photoUrl = String(mic.anchor_photo_url || '')
+      const photoUrls = Array.isArray(mic.anchor_photo_urls) && mic.anchor_photo_urls.length
+        ? mic.anchor_photo_urls.map(String)
+        : [String(mic.anchor_photo_url || '')].filter(Boolean)
+      const photoUrl = photoUrls[0] || ''
       const photoMarkup = photoUrl
-        ? `<img class="anchor-photo" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(title)}" onerror="this.closest('.mic-person')?.classList.remove('has-photo'); this.closest('.mic-person')?.classList.add('no-photo'); this.remove();" />`
+        ? `<img class="anchor-photo" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(title)}" data-photo-urls="${photoDataAttributes(photoUrls)}" data-photo-index="0" onerror="handleAnchorPhotoError(this);" />`
         : ''
       const personClass = photoUrl ? 'has-photo' : 'no-photo'
       return `
@@ -126,6 +133,21 @@ function renderMicTiles(mics) {
     })
     .join('')
 }
+
+function handleAnchorPhotoError(img) {
+  const urls = JSON.parse(img.dataset.photoUrls || '[]')
+  const nextIndex = Number(img.dataset.photoIndex || 0) + 1
+  if (urls[nextIndex]) {
+    img.dataset.photoIndex = String(nextIndex)
+    img.src = urls[nextIndex]
+    return
+  }
+  img.closest('.mic-person')?.classList.remove('has-photo')
+  img.closest('.mic-person')?.classList.add('no-photo')
+  img.remove()
+}
+
+window.handleAnchorPhotoError = handleAnchorPhotoError
 
 function renderPreview(display) {
   const previewMode = String(display.preview_mode || 'placeholder')

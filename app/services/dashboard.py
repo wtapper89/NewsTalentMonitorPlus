@@ -140,6 +140,7 @@ class DashboardService:
             payload = mic.to_dict()
             payload["history"] = self._history_payload_for(mic.id)
             payload["anchor_photo_url"] = self._photo_resolver.photo_url_for(mic.assigned_to, photo_config)
+            payload["anchor_photo_urls"] = self._photo_resolver.photo_urls_for(mic.assigned_to, photo_config)
             mic_payload.append(payload)
         summary = {
             "total": len(mic_payload),
@@ -264,6 +265,7 @@ class DashboardService:
             "companion_connection_label": DEFAULT_COMPANION["connection_label"],
             "companion_variable_name": DEFAULT_COMPANION["variable_name"],
             "anchor_photos_enabled": DEFAULT_ANCHOR_PHOTOS["enabled"],
+            "anchor_photos_base_url": DEFAULT_ANCHOR_PHOTOS["base_url"],
             "anchor_photos_share_path": DEFAULT_ANCHOR_PHOTOS["share_path"],
         }
 
@@ -323,6 +325,7 @@ class DashboardService:
             "companion_connection_label": str(companion.get("connection_label") or DEFAULT_COMPANION["connection_label"]),
             "companion_variable_name": str(companion.get("variable_name") or ""),
             "anchor_photos_enabled": bool((mapping.get("anchor_photos") or {}).get("enabled")),
+            "anchor_photos_base_url": str((mapping.get("anchor_photos") or {}).get("base_url") or ""),
             "anchor_photos_share_path": str((mapping.get("anchor_photos") or {}).get("share_path") or ""),
         }
 

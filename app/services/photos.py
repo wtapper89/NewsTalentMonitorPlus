@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urljoin
 
 
 PHOTO_EXTENSIONS = (".png", ".jpg", ".jpeg")
@@ -40,7 +40,22 @@ class AnchorPhotoResolver:
             return ""
         if not normalized_anchor_filename(name):
             return ""
+        urls = self.photo_urls_for(name, config)
+        if urls:
+            return urls[0]
         return f"/api/anchor-photos/{quote(name, safe='')}"
+
+    def photo_urls_for(self, name: str, config: dict) -> list[str]:
+        if not self._enabled(config) or not str(name or "").strip():
+            return []
+        stem = normalized_anchor_filename(name)
+        if not stem:
+            return []
+
+        base_url = str(config.get("base_url") or "").strip().rstrip("/")
+        if not base_url:
+            return []
+        return [urljoin(f"{base_url}/", f"{quote(stem)}{extension}") for extension in PHOTO_EXTENSIONS]
 
     def photo_path_for(self, name: str, config: dict) -> Path | None:
         if not self._enabled(config):
@@ -145,4 +160,7 @@ class AnchorPhotoResolver:
 
     @staticmethod
     def _enabled(config: dict) -> bool:
-        return bool(config.get("enabled")) and bool(str(config.get("share_path") or "").strip())
+        return bool(config.get("enabled")) and (
+            bool(str(config.get("share_path") or "").strip())
+            or bool(str(config.get("base_url") or "").strip())
+        )

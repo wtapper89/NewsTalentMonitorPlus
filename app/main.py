@@ -125,6 +125,7 @@ class CompanionConfigRequest(BaseModel):
 
 class AnchorPhotosConfigRequest(BaseModel):
     enabled: bool = Field(default=False)
+    base_url: str = Field(default="", max_length=1024)
     share_path: str = Field(default="", max_length=1024)
     username: str = Field(default="", max_length=255)
     password: str = Field(default="", max_length=255)

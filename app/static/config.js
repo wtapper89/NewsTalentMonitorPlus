@@ -181,6 +181,10 @@ function buildGlobalFields() {
           <input type="text" value="${escapeHtml(anchorPhotos.share_path ?? '')}" data-global-field="anchor_photos.share_path" placeholder="\\\\servername\\folder" />
         </label>
         <label class="stack">
+          <span class="field-label">HTTP folder URL</span>
+          <input type="text" value="${escapeHtml(anchorPhotos.base_url ?? '')}" data-global-field="anchor_photos.base_url" placeholder="http://10.46.161.168:8090/" />
+        </label>
+        <label class="stack">
           <span class="field-label">Username</span>
           <input type="text" value="${escapeHtml(anchorPhotos.username ?? '')}" data-global-field="anchor_photos.username" />
         </label>
@@ -403,6 +407,7 @@ function normalizeForSave() {
     },
     anchor_photos: {
       enabled: Boolean(configState.anchor_photos.enabled),
+      base_url: String(configState.anchor_photos.base_url || '').trim(),
       share_path: String(configState.anchor_photos.share_path || '').trim(),
       username: String(configState.anchor_photos.username || '').trim(),
       password: String(configState.anchor_photos.password || ''),

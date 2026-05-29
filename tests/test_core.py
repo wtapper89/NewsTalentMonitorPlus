@@ -8,7 +8,7 @@ import httpx
 
 from app.models import MicSnapshot
 from app.services.dashboard import DashboardService
-from app.services.photos import normalized_anchor_filename, parse_unc_path
+from app.services.photos import AnchorPhotoResolver, normalized_anchor_filename, parse_unc_path
 from app.services.shure import (
     MicboardAdapter,
     MockShureAdapter,
@@ -140,6 +140,18 @@ class AnchorPhotoTests(unittest.TestCase):
         service, remote_dir = parse_unc_path("\\\\server\\folder\\Headshots")
         self.assertEqual(service, "//server/folder")
         self.assertEqual(remote_dir, "Headshots")
+
+    def test_http_photo_urls_try_supported_extensions(self) -> None:
+        resolver = AnchorPhotoResolver()
+        urls = resolver.photo_urls_for("John Smith", {"enabled": True, "base_url": "http://vmix:8090/photos"})
+        self.assertEqual(
+            urls,
+            [
+                "http://vmix:8090/photos/JohnSmith.png",
+                "http://vmix:8090/photos/JohnSmith.jpg",
+                "http://vmix:8090/photos/JohnSmith.jpeg",
+            ],
+        )
 
 
 class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):

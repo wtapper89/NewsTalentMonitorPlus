@@ -34,6 +34,7 @@ DEFAULT_COMPANION = {
 
 DEFAULT_ANCHOR_PHOTOS = {
     "enabled": False,
+    "base_url": "",
     "share_path": "",
     "username": "",
     "password": "",
@@ -181,6 +182,7 @@ def _normalize_companion(raw_companion: dict | None) -> dict:
 def _normalize_anchor_photos(raw_anchor_photos: dict | None) -> dict:
     anchor_photos = {**DEFAULT_ANCHOR_PHOTOS, **(raw_anchor_photos or {})}
     anchor_photos["enabled"] = bool(anchor_photos.get("enabled"))
+    anchor_photos["base_url"] = str(anchor_photos.get("base_url") or "").strip().rstrip("/")
     anchor_photos["share_path"] = str(anchor_photos.get("share_path") or "").strip()
     anchor_photos["username"] = str(anchor_photos.get("username") or "").strip()
     anchor_photos["password"] = str(anchor_photos.get("password") or "")
