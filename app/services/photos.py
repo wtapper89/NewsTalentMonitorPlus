@@ -38,8 +38,7 @@ class AnchorPhotoResolver:
     def photo_url_for(self, name: str, config: dict) -> str:
         if not self._enabled(config) or not str(name or "").strip():
             return ""
-        path = self.photo_path_for(name, config)
-        if not path:
+        if not normalized_anchor_filename(name):
             return ""
         return f"/api/anchor-photos/{quote(name, safe='')}"
 

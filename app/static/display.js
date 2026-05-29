@@ -103,7 +103,7 @@ function renderMicTiles(mics) {
         : batteryMarkup(mic)
       const photoUrl = String(mic.anchor_photo_url || '')
       const photoMarkup = photoUrl
-        ? `<img class="anchor-photo" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(title)}" />`
+        ? `<img class="anchor-photo" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(title)}" onerror="this.closest('.mic-person')?.classList.remove('has-photo'); this.closest('.mic-person')?.classList.add('no-photo'); this.remove();" />`
         : ''
       const personClass = photoUrl ? 'has-photo' : 'no-photo'
       return `

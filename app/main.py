@@ -348,7 +348,11 @@ async def get_ndi_latest(request: Request) -> Response:
 @app.get("/api/anchor-photos/{anchor_name:path}")
 async def get_anchor_photo(anchor_name: str, request: Request) -> FileResponse:
     mapping = mapping_store_from(request).load()
-    path = photo_resolver_from(request).photo_path_for(anchor_name, mapping.get("anchor_photos", {}))
+    path = await asyncio.to_thread(
+        photo_resolver_from(request).photo_path_for,
+        anchor_name,
+        mapping.get("anchor_photos", {}),
+    )
     if not path:
         raise HTTPException(status_code=404, detail="Anchor photo not found")
     return FileResponse(
