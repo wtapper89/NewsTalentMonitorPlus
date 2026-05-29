@@ -1,181 +1,230 @@
 # Anchor Mics
 
-Anchor Mics is a local control-room dashboard and fullscreen display for Shure microphone assignments and telemetry, with a Companion module alongside it so live mic data can appear on Companion buttons and feedbacks.
+Anchor Mics is a Raspberry Pi display for church production teams. It shows a large program preview, the current and next rundown source, and the status of each wireless mic so a volunteer can quickly see who is assigned, which mics are on, and whether any battery or receiver problem needs attention.
 
-## What is in this repo
+The normal setup is:
 
-- A Python `FastAPI` app that serves a control-room dashboard and JSON APIs.
-- A Raspberry Pi friendly fullscreen display page at `/display`.
-- A mock Shure adapter so the interface works immediately without hardware.
-- A Micboard adapter that reads Micboard’s `data.json` feed and maps it onto your board layout.
-- A configurable `SystemAPI` adapter that polls URLs you map from your Shure deployment.
-- A Companion module folder that reads the dashboard state and exposes per-mic variables and status feedbacks.
+- A Raspberry Pi connected to the booth monitor or confidence display
+- Shure QLX-D receivers on the same network
+- Bitfocus Companion for names and rundown variables
+- vMix or another NDI source for the large preview window
+- Optional anchor or pastor headshots served from a simple web folder
 
-## Run this on your Mac
+## Daily Use
+
+1. Power on the Raspberry Pi.
+2. Wait for the fullscreen display to open.
+3. Confirm the large preview is showing the expected vMix or NDI output.
+4. Confirm the green `Now` box and yellow `Next` box show the right rundown items.
+5. Check the mic boxes at the bottom:
+   - Green means the mic is online and healthy.
+   - Yellow means something needs attention.
+   - Red means the mic or transmitter is unavailable.
+6. Tap the hamburger button in the upper-right corner to open the config page.
+
+## First Setup
+
+Open the config page from the Pi:
+
+```text
+http://anchor-mics.local:8010/config
+```
+
+If that does not work, use the Pi IP address:
+
+```text
+http://<pi-ip-address>:8010/config
+```
+
+The config page is organized into tabs.
+
+### Display Tab
+
+Use this tab for the large video preview.
+
+- `Preview mode`: choose `ndi` for vMix or another NDI source.
+- `NDI source name`: click `Scan`, then choose the source you want displayed.
+- `Preview URL`: leave blank when using NDI.
+- `Font family`: leave the default unless you installed a specific font on the Pi.
+
+Save after choosing the NDI source.
+
+### Companion Tab
+
+Use this tab when Companion should provide names for the top rundown boxes and mic assignments.
+
+- `Enable Companion polling`: set to `true`.
+- `Companion base URL`: enter the Companion computer URL, such as `http://10.0.0.50:8000`.
+- `Default connection label`: enter the Companion connection label used for variables, such as `vmix` or `custom`.
+- `PGM / Now source variable`: variable shown in the green `Now` box.
+- `PVW / Next source variable`: variable shown in the yellow `Next` box.
+
+Variable examples:
+
+```text
+vmix:mix_1_program_full_title
+vmix:mix_1_preview_full_title
+$(vmix:mix_1_program_full_title)
+```
+
+For mic names, each mic row has a `Companion assignment variable`. If that variable returns `John Smith`, the display uses `John Smith` instead of `Mic 1`.
+
+### Photos Tab
+
+Use this tab for square headshots beside anchor names.
+
+Recommended method:
+
+1. Put photos in a folder on the vMix or Companion computer.
+2. Name files without spaces, such as:
+
+```text
+JohnSmith.png
+JaneDoe.jpg
+```
+
+3. Start a simple web server for that folder.
+4. Enter the folder URL in `HTTP folder URL`, such as:
+
+```text
+http://10.0.0.50:8090/
+```
+
+If the mic assignment is `John Smith`, Anchor Mics looks for files like `JohnSmith.png`, `JohnSmith.jpg`, and `JohnSmith.jpeg`.
+
+### Receivers Tab
+
+For normal Shure QLX-D polling:
+
+- `Default scheme`: `tcp`
+- `Default port`: `2202`
+- `Auth type`: `none`
+
+The token fields are only for a custom Shure System API setup. Most churches can leave them blank.
+
+### Mics Tab
+
+Add one row for each mic you want on the display.
+
+Important fields:
+
+- `Display label`: fallback name when no Companion assignment is available.
+- `Assigned to`: manual fallback person name.
+- `Companion assignment variable`: variable that returns the assigned person.
+- `Receiver label`: friendly label, such as `Rack A`.
+- `Channel`: friendly channel label, such as `MIC 1`.
+- `Device IP / host`: the Shure receiver IP address or hostname.
+- `Receiver channel`: usually `1` for a single-channel QLX-D receiver.
+- `Scheme`: `tcp`
+- `Port`: `2202`
+
+Save when finished.
+
+## Photo Server on Windows
+
+If you want an easy public photo folder on Windows, open Command Prompt in the photo folder and run:
+
+```bat
+python -m http.server 8090
+```
+
+Then enter this in the Photos tab:
+
+```text
+http://<windows-computer-ip>:8090/
+```
+
+To start it automatically with Windows, use the batch file in:
+
+```text
+tools/windows-photo-server/
+```
+
+## Testing
+
+After saving config:
+
+1. Open the fullscreen display:
+
+```text
+http://<pi-ip-address>:8010/display
+```
+
+2. Confirm the NDI preview is moving.
+3. Confirm Now and Next match Companion or vMix.
+4. Turn one mic transmitter on and off to confirm the tile changes.
+5. Change a Companion mic assignment and confirm the display updates.
+
+## Troubleshooting
+
+### The preview is red or blank
+
+- Open Config -> Display.
+- Click `Scan` and choose the NDI source again.
+- Make sure the Pi and vMix computer are on the same network.
+- Check NDI status from:
+
+```text
+http://<pi-ip-address>:8010/api/ndi/status
+```
+
+### Now or Next is blank
+
+- Open Config -> Companion.
+- Confirm Companion polling is enabled.
+- Confirm the Companion base URL is reachable from the Pi.
+- Confirm the PGM and PVW variable names are correct.
+- If using a prefixed variable, use a form like `vmix:variable_name`.
+
+### Photos do not show
+
+- Open the photo URL in a browser from another computer.
+- Confirm file names remove spaces from the displayed name.
+- Confirm photos are `.png`, `.jpg`, or `.jpeg`.
+- Use HTTP hosting before trying a Windows share.
+
+### Battery warning appears too early
+
+Anchor Mics only marks a mic as low battery at `10%` or below. If a receiver reports another warning status, update to the latest build and restart the Pi service.
+
+## Building a Custom Pi Image
+
+If you want a flashable image with the app already installed, use:
 
 ```bash
-cd /path/to/AnchorMics
+./make-pi-image.command
+```
+
+Docker Desktop must be open first. If you have the NDI SDK Linux archive in Downloads, the builder can embed the NDI runtime after you confirm the SDK license.
+
+More details are in:
+
+```text
+deploy/pi-image/README.md
+deploy/raspberry-pi/README.md
+```
+
+## Developer Notes
+
+Run locally:
+
+```bash
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
 python run.py
 ```
 
-Then open:
+Useful pages:
 
-- Dashboard: [http://127.0.0.1:8010](http://127.0.0.1:8010)
-- Fullscreen display: [http://127.0.0.1:8010/display](http://127.0.0.1:8010/display)
-- Config page: [http://127.0.0.1:8010/config](http://127.0.0.1:8010/config)
-
-If you stop and restart later:
-
-```bash
-cd /path/to/AnchorMics
-. .venv/bin/activate
-python run.py
+```text
+http://127.0.0.1:8010/dashboard
+http://127.0.0.1:8010/display
+http://127.0.0.1:8010/config
 ```
 
-## Configuration
-
-Environment variables:
-
-- `ANCHOR_MICS_SOURCE`: `mock`, `micboard`, `qlxd`, or `system_api`
-  - default: `qlxd`
-- `ANCHOR_MICS_HOST`: bind host for the dashboard app
-- `ANCHOR_MICS_PORT`: bind port for the dashboard app
-- `ANCHOR_MICS_RELOAD`: set to `1` if you want uvicorn auto-reload while developing
-- `ANCHOR_MICS_REFRESH_SECONDS`: backend polling interval
-- `ANCHOR_MICS_DATA_FILE`: JSON file for assignment storage
-- `ANCHOR_MICS_MAPPING_FILE`: JSON mapping file for live Shure endpoints
-
-The config GUI now also stores:
-
-- Display settings for the Pi fullscreen layout
-- Companion variable lookup for the show title
-- Preview source settings for the large center window, including native NDI mode
-
-### Recommended QLX-D hookup: integrated receiver polling
-
-Anchor Mics now includes the QLX-D receiver polling internally, so you only need to run this app.
-
-1. Start the app.
-2. Open [http://127.0.0.1:8010/config](http://127.0.0.1:8010/config).
-3. Enter the IP or hostname for each QLX-D receiver row.
-4. Leave `Receiver channel` at `1` for a single-channel QLX-D receiver unless you know a different channel index is required.
-5. Save the config page.
-6. Restart the app in QLX-D live mode:
-
-```bash
-export ANCHOR_MICS_SOURCE=qlxd
-. .venv/bin/activate
-python run.py
-```
-
-The integrated QLX-D adapter reads:
-
-- channel name
-- battery level
-- RF level
-- audio level
-- receiver / transmitter error states
-
-Renaming in `qlxd` mode is sent directly to the receiver channel.
-
-Legacy note
-
-If you previously started the app with `ANCHOR_MICS_SOURCE=micboard`, that value is now treated as an alias for integrated `qlxd` mode so existing launch commands still work.
-
-## Companion integration
-
-The Companion module lives in [`companion-module-anchor-mics`](companion-module-anchor-mics).
-
-It polls `/api/companion/state` from the Python app and exposes:
-
-- Summary variables like `summary_total` and `summary_low_battery`
-- Per-mic variables like `mic_1_name`, `mic_1_assignee`, `mic_1_battery`, and `mic_1_errors`
-- Feedbacks for low battery and active mic errors
-
-The module follows Bitfocus Companion’s official module structure: `src/main.js`, `companion/manifest.json`, and `companion/HELP.md`.
-
-The FastAPI app can also read a module variable directly from Companion for the fullscreen display title. Configure this on `/config` using:
-
-- `Companion base URL`
-- `Connection label`
-- `Variable name`
-
-The fetch path uses Companion’s HTTP remote control API for module variables.
-
-## Fullscreen display
-
-The new fullscreen page is at [http://127.0.0.1:8010/display](http://127.0.0.1:8010/display).
-
-It is designed for a 1080p HDMI output on a Raspberry Pi and includes:
-
-- large clock
-- show title from manual config or Companion
-- large preview area
-- bottom mic status tiles for all configured Shure mics
-
-Important preview note:
-
-- Use `Preview mode = ndi` and set `NDI source name` to receive a native NDI source through the local NDI bridge.
-- The app exposes the bridge as an MJPEG feed at `/api/ndi/preview.mjpg` for Chromium.
-- The repo does not include the NDI SDK runtime because it is proprietary. Install the NDI runtime on the Pi or include it in the custom image build with `NDI_SDK_TARBALL`.
-- The default font stack starts with `Gotham`, but you must have a licensed Gotham font installed on the Pi for Chromium to actually render it. Otherwise it will fall back to the rest of the stack.
-
-NDI diagnostics:
-
-- `/api/ndi/status` shows bridge state, last error, and frame dimensions.
-- `/api/ndi/sources` scans for available NDI sources.
-
-## Raspberry Pi boot setup
-
-Systemd and kiosk launcher templates are in [`deploy/raspberry-pi`](deploy/raspberry-pi/README.md).
-
-They provide:
-
-- `anchor-mics.service` for the Python app
-- `anchor-mics-kiosk.service` for Chromium kiosk on boot
-- `start-kiosk.sh` for opening `/display` on the Pi HDMI output
-
-## Custom Pi image
-
-A Docker/pi-gen image build is in [`deploy/pi-image`](deploy/pi-image/README.md).
-
-Open Docker Desktop first and wait until the engine is running.
-
-Build the image with:
-
-```bash
-./make-pi-image.command
-```
-
-That wrapper auto-detects the NDI SDK archive at `~/Downloads/Install_NDI_SDK_v6_Linux.tar.gz`, caches it under `.pi-image-build/ndi/`, asks for license confirmation, and embeds the runtime into the image.
-
-If the SDK archive is somewhere else:
-
-```bash
-./deploy/pi-image/prepare-ndi-sdk.sh /path/to/Install_NDI_SDK_v6_Linux.tar.gz
-./make-pi-image.command
-```
-
-The resulting `.img.xz` in `.pi-image-build/pi-gen/deploy/` can be flashed with Raspberry Pi Imager using `Use custom`.
-
-## Testing
-
-Run the unit tests with:
+Run tests:
 
 ```bash
 python3 -m unittest discover -s tests
 ```
-
-## Notes
-
-- This repo ships in `mock` mode by default because the workspace does not have direct access to your Shure hardware.
-- The config page writes to [`config/system_api_mapping.example.json`](config/system_api_mapping.example.json) unless you point `ANCHOR_MICS_MAPPING_FILE` somewhere else.
-- The Companion module is included but not packaged here because this machine does not currently have Node/Yarn installed.
-- Official references used while shaping this MVP:
-  - Shure System API Server documentation: [shure.stoplight.io/docs/shure-system-api-server-specification](https://shure.stoplight.io/docs/shure-system-api-server-specification/c30bd45807650-shure-system-api-server)
-  - Micboard QLX-D firmware note: [github.com/karlcswanson/micboard/blob/master/docs/qlxd.md](https://github.com/karlcswanson/micboard/blob/master/docs/qlxd.md)
-  - Companion module development guide: [companion.free/for-developers/module-development/home](https://companion.free/for-developers/module-development/home)
-  - Companion variables guide: [companion.free/for-developers/module-development/connection-basics/variables](https://companion.free/for-developers/module-development/connection-basics/variables)

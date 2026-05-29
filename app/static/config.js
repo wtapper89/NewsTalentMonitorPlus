@@ -3,6 +3,7 @@ const configPathEl = document.getElementById('configPath')
 const configCountEl = document.getElementById('configCount')
 const globalConfigEl = document.getElementById('globalConfig')
 const micConfigsEl = document.getElementById('micConfigs')
+const micConfigSectionEl = document.getElementById('micConfigSection')
 const configFormEl = document.getElementById('configForm')
 const saveStatusEl = document.getElementById('saveStatus')
 
@@ -28,6 +29,15 @@ let configState = {
 }
 let ndiSources = []
 let ndiStatus = null
+let activeConfigTab = 'display'
+
+const CONFIG_TABS = [
+  ['display', 'Display'],
+  ['companion', 'Companion'],
+  ['photos', 'Photos'],
+  ['receivers', 'Receivers'],
+  ['mics', 'Mics'],
+]
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -42,6 +52,31 @@ function saveStatus(message, status = '') {
   saveStatusEl.className = `save-status ${status}`.trim()
 }
 
+function fieldLabel(label, help) {
+  const helpButton = help
+    ? `<button type="button" class="help-button" title="${escapeHtml(help)}" aria-label="${escapeHtml(`${label}: ${help}`)}">?</button>`
+    : ''
+  return `<span class="field-label"><span>${escapeHtml(label)}</span>${helpButton}</span>`
+}
+
+function renderTabs() {
+  return `
+    <div class="config-tabs" role="tablist" aria-label="Configuration sections">
+      ${CONFIG_TABS.map(
+        ([id, label]) => `
+          <button type="button" class="config-tab ${activeConfigTab === id ? 'is-active' : ''}" data-config-tab="${id}" role="tab" aria-selected="${activeConfigTab === id ? 'true' : 'false'}">
+            ${escapeHtml(label)}
+          </button>
+        `,
+      ).join('')}
+    </div>
+  `
+}
+
+function tabPanel(id, content) {
+  return `<section class="config-tab-panel ${activeConfigTab === id ? 'is-active' : ''}" data-config-tab-panel="${id}">${content}</section>`
+}
+
 function buildGlobalFields() {
   const auth = configState.auth || {}
   const defaults = configState.default_connection || {}
@@ -50,27 +85,29 @@ function buildGlobalFields() {
   const anchorPhotos = configState.anchor_photos || {}
 
   globalConfigEl.innerHTML = `
+    ${renderTabs()}
+    ${tabPanel('display', `
     <article class="config-card">
       <div class="config-card-head">
         <div>
           <h3>Display</h3>
-          <p>Fullscreen Pi layout, show title, and preview source.</p>
+          <p>Fullscreen Pi layout and the large video preview.</p>
         </div>
       </div>
       <div class="config-card-grid">
         <label class="stack">
-          <span class="field-label">Show title mode</span>
+          ${fieldLabel('Show title mode', 'Legacy option for the old title area. The kiosk now uses Now and Next instead.')}
           <select data-global-field="display.show_title_mode">
             <option value="manual" ${String(display.show_title_mode || 'manual') === 'manual' ? 'selected' : ''}>manual</option>
             <option value="companion" ${String(display.show_title_mode || '') === 'companion' ? 'selected' : ''}>companion</option>
           </select>
         </label>
         <label class="stack">
-          <span class="field-label">Manual show title</span>
+          ${fieldLabel('Manual show title', 'Fallback title kept for compatibility with older display layouts.')}
           <input type="text" value="${escapeHtml(display.manual_show_title ?? 'TVC NEWS')}" data-global-field="display.manual_show_title" />
         </label>
         <label class="stack">
-          <span class="field-label">Preview mode</span>
+          ${fieldLabel('Preview mode', 'Use NDI for the built-in NDI receiver. Use iframe/image/video only for browser-playable URLs.')}
           <select data-global-field="display.preview_mode">
             <option value="placeholder" ${String(display.preview_mode || 'placeholder') === 'placeholder' ? 'selected' : ''}>placeholder</option>
             <option value="ndi" ${String(display.preview_mode || '') === 'ndi' ? 'selected' : ''}>ndi</option>
@@ -80,11 +117,11 @@ function buildGlobalFields() {
           </select>
         </label>
         <label class="stack">
-          <span class="field-label">Preview URL</span>
+          ${fieldLabel('Preview URL', 'Only needed when Preview mode is iframe, image, or video. NDI mode ignores this field.')}
           <input type="text" value="${escapeHtml(display.preview_url ?? '')}" data-global-field="display.preview_url" placeholder="http://127.0.0.1:8080/preview" />
         </label>
         <label class="stack">
-          <span class="field-label">NDI source name</span>
+          ${fieldLabel('NDI source name', 'The exact NDI source to show in the large preview. Use Scan to find sources visible to the Pi.')}
           <div class="input-row">
             <input type="text" value="${escapeHtml(display.preview_source_name ?? '')}" data-global-field="display.preview_source_name" placeholder="StudioCam 1" list="ndiSources" />
             <button type="button" class="secondary button-inline" id="scanNdiButton">Scan</button>
@@ -92,11 +129,11 @@ function buildGlobalFields() {
           <datalist id="ndiSources"></datalist>
         </label>
         <label class="stack">
-          <span class="field-label">Preview poster URL</span>
+          ${fieldLabel('Preview poster URL', 'Optional poster image for video URL mode. Not used for NDI.')}
           <input type="text" value="${escapeHtml(display.preview_poster_url ?? '')}" data-global-field="display.preview_poster_url" placeholder="http://127.0.0.1:8080/poster.jpg" />
         </label>
         <label class="stack">
-          <span class="field-label">Font family</span>
+          ${fieldLabel('Font family', 'Fonts Chromium should try for the kiosk display. The font must be installed on the Pi.')}
           <input type="text" value="${escapeHtml(display.font_family ?? 'Gotham, Montserrat, Arial, sans-serif')}" data-global-field="display.font_family" />
         </label>
       </div>
@@ -130,87 +167,93 @@ function buildGlobalFields() {
         </div>
       </div>
     </article>
+    `)}
 
+    ${tabPanel('companion', `
     <article class="config-card">
       <div class="config-card-head">
         <div>
           <h3>Companion source</h3>
-          <p>Read Now, Next, and per-mic anchor assignments from Companion variables.</p>
+          <p>Read PGM, PVW, and per-mic anchor assignments from Companion or vMix variables.</p>
         </div>
       </div>
       <div class="config-card-grid">
         <label class="stack">
-          <span class="field-label">Enable Companion polling</span>
+          ${fieldLabel('Enable Companion polling', 'Turn this on when the Pi should read values from Companion HTTP variable endpoints.')}
           <select data-global-field="companion.enabled">
             <option value="true" ${companion.enabled ? 'selected' : ''}>true</option>
             <option value="false" ${!companion.enabled ? 'selected' : ''}>false</option>
           </select>
         </label>
         <label class="stack">
-          <span class="field-label">Companion base URL</span>
+          ${fieldLabel('Companion base URL', 'The web address for Companion on the machine running it, for example http://10.0.0.50:8000.')}
           <input type="text" value="${escapeHtml(companion.base_url ?? 'http://127.0.0.1:8000')}" data-global-field="companion.base_url" />
         </label>
         <label class="stack">
-          <span class="field-label">Connection label</span>
+          ${fieldLabel('Default connection label', 'The Companion instance label used when a variable is entered without a prefix. For vMix variables this is often vmix.')}
           <input type="text" value="${escapeHtml(companion.connection_label ?? 'Cuez')}" data-global-field="companion.connection_label" />
         </label>
         <label class="stack">
-          <span class="field-label">Show title variable</span>
+          ${fieldLabel('Show title variable', 'Legacy title variable. Most setups can leave this blank now that the kiosk uses PGM and PVW.')}
           <input type="text" value="${escapeHtml(companion.variable_name ?? '')}" data-global-field="companion.variable_name" placeholder="segment_title" />
         </label>
         <label class="stack">
-          <span class="field-label">Now source variable</span>
+          ${fieldLabel('PGM / Now source variable', 'Variable shown in the green Now box. Example: vmix:mix_1_program_full_title or $(vmix:mix_1_program_full_title).')}
           <input type="text" value="${escapeHtml(companion.on_air_source_variable_name ?? '')}" data-global-field="companion.on_air_source_variable_name" placeholder="CurrentSource" />
         </label>
         <label class="stack">
-          <span class="field-label">Next source variable</span>
+          ${fieldLabel('PVW / Next source variable', 'Variable shown in the yellow Next box. Enter the vMix preview variable name here.')}
           <input type="text" value="${escapeHtml(companion.next_source_variable_name ?? '')}" data-global-field="companion.next_source_variable_name" placeholder="NextSource" />
         </label>
       </div>
     </article>
+    `)}
 
+    ${tabPanel('photos', `
     <article class="config-card">
       <div class="config-card-head">
         <div>
           <h3>Anchor photos</h3>
-          <p>Match assignment names to files on a Windows share, such as JohnSmith.png.</p>
+          <p>Match anchor names to headshots, such as JohnSmith.png.</p>
         </div>
       </div>
       <div class="config-card-grid">
         <label class="stack">
-          <span class="field-label">Enable photos</span>
+          ${fieldLabel('Enable photos', 'Turn on headshots beside mic names on the fullscreen display.')}
           <select data-global-field="anchor_photos.enabled">
             <option value="true" ${anchorPhotos.enabled ? 'selected' : ''}>true</option>
             <option value="false" ${!anchorPhotos.enabled ? 'selected' : ''}>false</option>
           </select>
         </label>
         <label class="stack">
-          <span class="field-label">Windows share path</span>
+          ${fieldLabel('Windows share path', 'Optional SMB path. HTTP folder URL is usually easier and more reliable.')}
           <input type="text" value="${escapeHtml(anchorPhotos.share_path ?? '')}" data-global-field="anchor_photos.share_path" placeholder="\\\\servername\\folder" />
         </label>
         <label class="stack">
-          <span class="field-label">HTTP folder URL</span>
+          ${fieldLabel('HTTP folder URL', 'Recommended photo method. Point this to a simple web folder on the vMix or Companion computer.')}
           <input type="text" value="${escapeHtml(anchorPhotos.base_url ?? '')}" data-global-field="anchor_photos.base_url" placeholder="http://vmix-host:8090/" />
         </label>
         <label class="stack">
-          <span class="field-label">Username</span>
+          ${fieldLabel('Username', 'Only needed for a protected Windows share. Leave blank for HTTP photo hosting.')}
           <input type="text" value="${escapeHtml(anchorPhotos.username ?? '')}" data-global-field="anchor_photos.username" />
         </label>
         <label class="stack">
-          <span class="field-label">Password</span>
+          ${fieldLabel('Password', 'Only needed for a protected Windows share. Leave blank for HTTP photo hosting.')}
           <input type="password" value="${escapeHtml(anchorPhotos.password ?? '')}" data-global-field="anchor_photos.password" />
         </label>
         <label class="stack">
-          <span class="field-label">Domain</span>
+          ${fieldLabel('Domain', 'Optional Windows domain or computer name for SMB authentication.')}
           <input type="text" value="${escapeHtml(anchorPhotos.domain ?? '')}" data-global-field="anchor_photos.domain" />
         </label>
         <label class="stack">
-          <span class="field-label">Timeout seconds</span>
+          ${fieldLabel('Timeout seconds', 'How long the Pi waits for a photo lookup before drawing the mic without a picture.')}
           <input type="number" min="1" max="30" value="${escapeHtml(anchorPhotos.timeout_seconds ?? 4)}" data-global-field="anchor_photos.timeout_seconds" />
         </label>
       </div>
     </article>
+    `)}
 
+    ${tabPanel('receivers', `
     <article class="config-card">
       <div class="config-card-head">
         <div>
@@ -220,14 +263,14 @@ function buildGlobalFields() {
       </div>
       <div class="config-card-grid">
         <label class="stack">
-          <span class="field-label">Auth type</span>
+          ${fieldLabel('Auth type', 'Leave as none for normal QLX-D receiver polling. Bearer is for custom System API integrations.')}
           <select data-global-field="auth.type">
             <option value="none" ${String(auth.type || 'none') === 'none' ? 'selected' : ''}>none</option>
             <option value="bearer" ${String(auth.type || '') === 'bearer' ? 'selected' : ''}>bearer</option>
           </select>
         </label>
         <label class="stack">
-          <span class="field-label">Default scheme</span>
+          ${fieldLabel('Default scheme', 'Use tcp for QLX-D receivers. HTTP/HTTPS are for custom API integrations.')}
           <select data-global-field="default_connection.scheme">
             <option value="tcp" ${defaults.scheme === 'tcp' ? 'selected' : ''}>tcp</option>
             <option value="http" ${defaults.scheme === 'http' ? 'selected' : ''}>http</option>
@@ -235,27 +278,28 @@ function buildGlobalFields() {
           </select>
         </label>
         <label class="stack">
-          <span class="field-label">Default port</span>
+          ${fieldLabel('Default port', 'QLX-D control normally uses TCP port 2202.')}
           <input type="number" min="1" max="65535" value="${escapeHtml(defaults.port ?? 2202)}" data-global-field="default_connection.port" />
         </label>
         <label class="stack">
-          <span class="field-label">Token URL</span>
+          ${fieldLabel('Token URL', 'Only used for bearer auth in System API mode.')}
           <input type="text" value="${escapeHtml(auth.token_url ?? '')}" data-global-field="auth.token_url" />
         </label>
         <label class="stack">
-          <span class="field-label">Client ID</span>
+          ${fieldLabel('Client ID', 'Only used for bearer auth in System API mode.')}
           <input type="text" value="${escapeHtml(auth.client_id ?? '')}" data-global-field="auth.client_id" />
         </label>
         <label class="stack">
-          <span class="field-label">Client secret</span>
+          ${fieldLabel('Client secret', 'Only used for bearer auth in System API mode.')}
           <input type="password" value="${escapeHtml(auth.client_secret ?? '')}" data-global-field="auth.client_secret" />
         </label>
         <label class="stack">
-          <span class="field-label">Grant type</span>
+          ${fieldLabel('Grant type', 'OAuth grant type for System API mode. Leave as client_credentials unless your API requires something else.')}
           <input type="text" value="${escapeHtml(auth.grant_type ?? 'client_credentials')}" data-global-field="auth.grant_type" />
         </label>
       </div>
     </article>
+    `)}
   `
 }
 
@@ -292,39 +336,39 @@ function buildMicCards() {
 
           <div class="config-card-grid">
             <label class="stack">
-              <span class="field-label">Mic ID</span>
+              ${fieldLabel('Mic ID', 'Stable internal ID for this tile. Keep it unique, such as mic-1.')}
               <input type="text" value="${escapeHtml(mic.id)}" data-mic-index="${index}" data-mic-field="id" />
             </label>
             <label class="stack">
-              <span class="field-label">Display label</span>
+              ${fieldLabel('Display label', 'Fallback label when there is no assigned anchor name from Companion.')}
               <input type="text" value="${escapeHtml(mic.default_name)}" data-mic-index="${index}" data-mic-field="default_name" />
             </label>
             <label class="stack">
-              <span class="field-label">Assigned to</span>
+              ${fieldLabel('Assigned to', 'Manual name for this mic. Companion assignment variables override this when configured.')}
               <input type="text" value="${escapeHtml(mic.assigned_to ?? '')}" data-mic-index="${index}" data-mic-field="assigned_to" placeholder="Lead Pastor" />
             </label>
             <label class="stack">
-              <span class="field-label">Companion assignment variable</span>
+              ${fieldLabel('Companion assignment variable', 'Variable that returns the person assigned to this mic, for example mic_1_anchor or $(custom:Mic1).')}
               <input type="text" value="${escapeHtml(mic.assignment_variable_name ?? '')}" data-mic-index="${index}" data-mic-field="assignment_variable_name" placeholder="mic_1_anchor" />
             </label>
             <label class="stack">
-              <span class="field-label">Receiver label</span>
+              ${fieldLabel('Receiver label', 'Friendly label for the receiver rack or location.')}
               <input type="text" value="${escapeHtml(mic.receiver_name ?? '')}" data-mic-index="${index}" data-mic-field="receiver_name" />
             </label>
             <label class="stack">
-              <span class="field-label">Channel</span>
+              ${fieldLabel('Channel', 'Friendly channel label shown in the dashboard and under assigned names.')}
               <input type="text" value="${escapeHtml(mic.channel_label ?? '')}" data-mic-index="${index}" data-mic-field="channel_label" />
             </label>
             <label class="stack">
-              <span class="field-label">Receiver channel</span>
+              ${fieldLabel('Receiver channel', 'Usually 1 for a single-channel QLX-D receiver.')}
               <input type="number" min="1" max="4" value="${escapeHtml(mic.receiver_channel ?? 1)}" data-mic-index="${index}" data-mic-field="receiver_channel" />
             </label>
             <label class="stack">
-              <span class="field-label">Device IP / host</span>
+              ${fieldLabel('Device IP / host', 'IP address or hostname of the Shure receiver, not the transmitter.')}
               <input type="text" value="${escapeHtml(mic.device_ip ?? '')}" data-mic-index="${index}" data-mic-field="device_ip" placeholder="192.168.1.40" />
             </label>
             <label class="stack">
-              <span class="field-label">Scheme</span>
+              ${fieldLabel('Scheme', 'Use tcp for normal QLX-D receiver polling.')}
               <select data-mic-index="${index}" data-mic-field="scheme">
                 <option value="tcp" ${mic.scheme === 'tcp' ? 'selected' : ''}>tcp</option>
                 <option value="http" ${mic.scheme === 'http' ? 'selected' : ''}>http</option>
@@ -332,15 +376,15 @@ function buildMicCards() {
               </select>
             </label>
             <label class="stack">
-              <span class="field-label">Port</span>
+              ${fieldLabel('Port', 'QLX-D control normally uses 2202.')}
               <input type="number" min="1" max="65535" value="${escapeHtml(mic.port ?? configState.default_connection.port ?? 443)}" data-mic-index="${index}" data-mic-field="port" />
             </label>
             <label class="stack">
-              <span class="field-label">Telemetry path</span>
+              ${fieldLabel('Telemetry path', 'Only used for HTTP/System API mode. Leave blank for QLX-D tcp mode.')}
               <input type="text" value="${escapeHtml(mic.telemetry_path ?? '')}" data-mic-index="${index}" data-mic-field="telemetry_path" placeholder="/api/receivers/rack-a/channels/a1" />
             </label>
             <label class="stack">
-              <span class="field-label">Rename path</span>
+              ${fieldLabel('Rename path', 'Only used for HTTP/System API mode. Leave blank for QLX-D tcp mode.')}
               <input type="text" value="${escapeHtml(mic.rename_path ?? '')}" data-mic-index="${index}" data-mic-field="rename_path" placeholder="/api/receivers/rack-a/channels/a1/name" />
             </label>
           </div>
@@ -356,6 +400,7 @@ function render() {
   configCountEl.textContent = String(configState.mics.length)
   buildGlobalFields()
   buildMicCards()
+  micConfigSectionEl.classList.toggle('is-active', activeConfigTab === 'mics')
 }
 
 function nextMicId() {
@@ -549,6 +594,7 @@ document.addEventListener('click', (event) => {
   if (!(target instanceof HTMLElement)) return
 
   if (target.id === 'addMicButton') {
+    activeConfigTab = 'mics'
     configState.mics.push(newMicConfig())
     render()
     saveStatus('Added new mic entry. Save to persist.')
@@ -587,6 +633,13 @@ document.addEventListener('click', (event) => {
     configState.mics.splice(index, 1)
     render()
     saveStatus('Removed mic entry. Save to persist.')
+    return
+  }
+
+  const tabButton = target.closest('[data-config-tab]')
+  if (tabButton instanceof HTMLElement) {
+    activeConfigTab = tabButton.dataset.configTab || 'display'
+    render()
   }
 })
 

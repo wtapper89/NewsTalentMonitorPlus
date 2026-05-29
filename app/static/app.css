@@ -559,6 +559,41 @@ button.secondary {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
+#globalConfig {
+  display: block;
+}
+
+.config-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.config-tab {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.config-tab.is-active {
+  border-color: rgba(86, 211, 255, 0.8);
+  background: rgba(86, 211, 255, 0.16);
+}
+
+.config-tab-panel,
+#micConfigSection {
+  display: none;
+}
+
+.config-tab-panel.is-active,
+#micConfigSection.is-active {
+  display: grid;
+  gap: 18px;
+}
+
 .config-card {
   padding: 20px;
   background: var(--panel-strong);
@@ -568,6 +603,26 @@ button.secondary {
 
 .config-card-grid {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.help-button {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(86, 211, 255, 0.16);
+  color: var(--cyan);
+  font-size: 0.78rem;
+  line-height: 1;
 }
 
 .config-card-head {

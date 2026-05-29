@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Anchor Mics Config</title>
-    <link rel="stylesheet" href="/static/app.css" />
+    <link rel="stylesheet" href="/static/app.css?v=20260529-config-tabs" />
   </head>
   <body>
     <div class="backdrop"></div>
@@ -49,9 +49,9 @@
         <div class="board-header">
           <div>
             <p class="section-kicker">Receiver Settings</p>
-            <h2>Integrated QLX-D polling</h2>
+            <h2>Setup</h2>
           </div>
-          <p class="board-note">Run this app with `ANCHOR_MICS_SOURCE=qlxd`. The HTTP path fields stay available for `system_api` mode if you use another Shure source later.</p>
+          <p class="board-note">Use the tabs below to set up the display, Companion variables, photos, receivers, and individual mics.</p>
         </div>
 
         <form id="configForm" class="config-form">
@@ -59,7 +59,7 @@
             <div class="config-grid" id="globalConfig"></div>
           </section>
 
-          <section class="config-section">
+          <section class="config-section" id="micConfigSection">
             <div class="board-header">
               <div>
                 <p class="section-kicker">Per Mic</p>
@@ -78,6 +78,6 @@
       </section>
     </main>
 
-    <script src="/static/config.js" defer></script>
+    <script src="/static/config.js?v=20260529-config-tabs" defer></script>
   </body>
 </html>
