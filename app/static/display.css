@@ -154,13 +154,13 @@ body {
 }
 
 .mic-tile {
-  height: clamp(92px, 14.2vh, 138px);
+  height: clamp(104px, 14.2vh, 138px);
   min-height: 0;
   border: 5px solid var(--outline);
   border-radius: 8px;
-  padding: 0 12px 8px;
+  padding: 0 10px 7px;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: minmax(44px, 1fr) minmax(30px, auto) 18px;
   gap: 2px;
   color: var(--fg);
   overflow: hidden;
@@ -168,7 +168,7 @@ body {
 
 .mic-tile.ok {
   background: var(--ok);
-  color: var(--fg);
+  color: var(--dark-text);
 }
 
 .mic-tile.warning {
@@ -192,7 +192,7 @@ body {
 .mic-person.has-photo {
   min-height: 0;
   height: 100%;
-  margin-left: -12px;
+  margin-left: -10px;
   grid-row: 1 / 4;
   grid-template-columns: auto minmax(0, 1fr);
   justify-content: start;
@@ -204,7 +204,7 @@ body {
 
 .anchor-photo {
   align-self: stretch;
-  width: clamp(92px, 14.2vh, 138px);
+  width: clamp(104px, 14.2vh, 138px);
   height: 100%;
   border: 0;
   border-right: 5px solid var(--outline);
@@ -225,6 +225,10 @@ body {
   text-align: center;
   line-height: 1;
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .mic-subtitle {
@@ -232,11 +236,14 @@ body {
   text-align: center;
   opacity: 0.9;
   min-height: 1.15em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mic-person-text {
   min-width: 0;
-  padding: 8px 0 8px;
+  padding: 6px 0 4px;
 }
 
 .mic-main {
@@ -256,10 +263,15 @@ body {
 .mic-stats {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  font-size: clamp(0.72rem, 0.85vw, 0.9rem);
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  font-size: clamp(0.64rem, 0.72vw, 0.78rem);
   font-weight: 700;
   letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .battery-visual {
@@ -269,20 +281,20 @@ body {
 }
 
 .battery-shell {
-  width: 116px;
-  height: 34px;
-  border: 4px solid currentColor;
+  width: 96px;
+  height: 28px;
+  border: 3px solid currentColor;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.88);
-  padding: 4px;
+  padding: 3px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
 }
 
 .battery-cap {
-  width: 8px;
-  height: 20px;
+  width: 7px;
+  height: 17px;
   border-radius: 3px;
   background: currentColor;
 }
@@ -305,7 +317,7 @@ body {
 }
 
 .battery-percent {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
