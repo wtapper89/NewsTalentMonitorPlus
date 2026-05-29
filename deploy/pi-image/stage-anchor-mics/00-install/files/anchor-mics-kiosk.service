@@ -1,5 +1,5 @@
 [Unit]
-Description=Anchor Mics Chromium kiosk
+Description=News Talent Monitor+ Chromium kiosk
 After=graphical.target anchor-mics.service
 Wants=anchor-mics.service
 

@@ -2,7 +2,7 @@
 setlocal
 
 set "PORT=8090"
-set "TASK_NAME=Anchor Mics Photo Server"
+set "TASK_NAME=News Talent Monitor Photo Server"
 set "PHOTO_DIR=%~dp0"
 set "START_SCRIPT=%PHOTO_DIR%Start Anchor Photo Server.vbs"
 
@@ -29,7 +29,7 @@ schtasks /Run /TN "%TASK_NAME%" >nul
 
 echo.
 echo Done. The photo server will start when this Windows user logs in.
-echo URL for Anchor Mics:
+echo URL for News Talent Monitor+:
 echo http://%COMPUTERNAME%:%PORT%/
 echo.
 echo Put files like JohnSmith.png, JohnSmith.jpg, or JohnSmith.jpeg in:

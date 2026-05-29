@@ -1,6 +1,6 @@
-# Anchor Mics Companion Module
+# News Talent Monitor+ Companion Module
 
-This module connects Companion to the local Anchor Mics dashboard backend.
+This module connects Companion to the local News Talent Monitor+ backend.
 
 ## Configuration
 
@@ -34,4 +34,3 @@ Per-mic variables are exposed as `mic_1_name`, `mic_1_assignee`, `mic_1_battery`
 2. Place this module in your Companion module development folder.
 3. Install dependencies with Yarn on a machine that has Node 22.
 4. Add the module in Companion and point it at the dashboard host and port.
-

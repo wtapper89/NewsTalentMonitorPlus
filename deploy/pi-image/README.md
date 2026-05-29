@@ -1,6 +1,6 @@
 # Custom Raspberry Pi Image
 
-This folder builds a flashable Raspberry Pi OS image with Anchor Mics installed and configured to boot directly to the HDMI display page.
+This folder builds a flashable Raspberry Pi OS image with News Talent Monitor+ installed and configured to boot directly to the HDMI display page.
 
 The output is an `.img.xz` file that can be written with Raspberry Pi Imager using `Choose OS` -> `Use custom`.
 

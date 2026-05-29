@@ -2,8 +2,8 @@
   "$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
   "id": "anchor-mics",
   "name": "anchor-mics",
-  "shortname": "Anchor Mics",
-  "description": "Pull live microphone assignments and telemetry from the Anchor Mics dashboard backend.",
+  "shortname": "NTM+",
+  "description": "Pull live talent microphone assignments and telemetry from the News Talent Monitor+ backend.",
   "version": "0.1.0",
   "license": "MIT",
   "repository": "git+https://github.com/example/companion-module-anchor-mics.git",
@@ -21,7 +21,6 @@
   },
   "legacyIds": [],
   "manufacturer": "Custom",
-  "products": ["Anchor Mics"],
-  "keywords": ["shure", "microphones", "monitoring", "assignments"]
+  "products": ["News Talent Monitor+"],
+  "keywords": ["shure", "microphones", "monitoring", "assignments", "vmix", "news"]
 }
-

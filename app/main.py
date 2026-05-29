@@ -74,7 +74,7 @@ async def lifespan(app: FastAPI):
         await service.close()
 
 
-app = FastAPI(title="Anchor Mics", lifespan=lifespan)
+app = FastAPI(title="News Talent Monitor+", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=ROOT_DIR / "app" / "static"), name="static")
 
 

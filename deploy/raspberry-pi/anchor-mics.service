@@ -1,5 +1,5 @@
 [Unit]
-Description=Anchor Mics FastAPI service
+Description=News Talent Monitor+ FastAPI service
 After=network-online.target
 Wants=network-online.target
 

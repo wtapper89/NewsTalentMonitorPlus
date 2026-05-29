@@ -1,6 +1,6 @@
 # Raspberry Pi Kiosk
 
-This folder contains a simple boot-to-HDMI setup for running the fullscreen Anchor Mics display on a Raspberry Pi.
+This folder contains a simple boot-to-HDMI setup for running the fullscreen News Talent Monitor+ display on a Raspberry Pi.
 
 ## What it does
 

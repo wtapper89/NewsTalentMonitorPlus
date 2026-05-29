@@ -345,7 +345,7 @@ function buildMicCards() {
             </label>
             <label class="stack">
               ${fieldLabel('Assigned to', 'Manual name for this mic. Companion assignment variables override this when configured.')}
-              <input type="text" value="${escapeHtml(mic.assigned_to ?? '')}" data-mic-index="${index}" data-mic-field="assigned_to" placeholder="Lead Pastor" />
+              <input type="text" value="${escapeHtml(mic.assigned_to ?? '')}" data-mic-index="${index}" data-mic-field="assigned_to" placeholder="Lead Anchor" />
             </label>
             <label class="stack">
               ${fieldLabel('Companion assignment variable', 'Variable that returns the person assigned to this mic, for example mic_1_anchor or $(custom:Mic1).')}
