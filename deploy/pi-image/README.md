@@ -17,6 +17,12 @@ The builder uses pi-gen's `bookworm-arm64` branch so the image is 64-bit and sta
 
 ## Build
 
+On Windows, use the plain-English setup guide first:
+
+```text
+docs/WINDOWS_SETUP.md
+```
+
 From the repo root:
 
 ```bash

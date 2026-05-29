@@ -38,6 +38,12 @@ The goal is simple: give talent and operators more context using hardware you pr
 
 ## First Setup
 
+For a step-by-step Windows PC setup, including Docker Desktop, the NDI SDK location, building the Pi image, flashing the image, and running the Windows photo server, start here:
+
+```text
+docs/WINDOWS_SETUP.md
+```
+
 Open the config page from the Pi:
 
 ```text
@@ -214,6 +220,7 @@ Docker Desktop must be open first. If you have the NDI SDK Linux archive in Down
 More details are in:
 
 ```text
+docs/WINDOWS_SETUP.md
 deploy/pi-image/README.md
 deploy/raspberry-pi/README.md
 ```

@@ -8,7 +8,7 @@ DOWNLOADS_SDK="${HOME}/Downloads/Install_NDI_SDK_v6_Linux.tar.gz"
 
 cd "${SCRIPT_DIR}"
 
-echo "Anchor Mics Raspberry Pi image builder"
+echo "News Talent Monitor+ Raspberry Pi image builder"
 echo
 
 if ! command -v docker >/dev/null 2>&1; then
