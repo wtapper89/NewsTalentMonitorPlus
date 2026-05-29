@@ -1,87 +1,61 @@
-# Custom Raspberry Pi Image
+# Pi Image Builder
 
-This folder builds a flashable Raspberry Pi OS image with News Talent Monitor+ installed and configured to boot directly to the HDMI display page.
-
-The output is an `.img.xz` file that can be written with Raspberry Pi Imager using `Choose OS` -> `Use custom`.
-
-## Requirements
-
-- Docker
-- Docker Desktop must be open and running before you start the build
-- Git
-- `rsync`
-- Enough disk space for a Raspberry Pi OS image build
-- Optional: NDI SDK Linux archive containing `libndi.so`
-
-The builder uses pi-gen's `bookworm-arm64` branch so the image is 64-bit and stays on the stable Raspberry Pi OS Bookworm path for Pi 5.
-
-## Build
-
-Most Windows users should not build this image. They should flash a prepared `.img.xz` with Raspberry Pi Imager:
+Most people should use:
 
 ```text
-docs/WINDOWS_SETUP.md
+docs/START_HERE.md
 ```
 
-This build process is for maintainers creating that prepared image on a Mac or Linux machine with Docker.
+This folder is for the image builder used by `make-pi-image.command`.
 
-From the repo root:
+## Simple Build Steps
+
+1. Install and open Docker Desktop.
+2. Download the Linux NDI SDK archive.
+3. Put it here:
+
+```text
+~/Downloads/Install_NDI_SDK_v6_Linux.tar.gz
+```
+
+4. From the repo root, run:
 
 ```bash
 ./make-pi-image.command
 ```
 
-That command:
+5. Type `y` when asked to confirm the NDI SDK license.
+6. Wait for the build to finish.
 
-- finds `~/Downloads/Install_NDI_SDK_v6_Linux.tar.gz`
-- copies it into the untracked build cache at `.pi-image-build/ndi/`
-- asks you to confirm the NDI SDK license
-- builds the custom Raspberry Pi image with the NDI runtime embedded
+The finished image will be in:
 
-If you want to cache the SDK manually first:
-
-```bash
-./deploy/pi-image/prepare-ndi-sdk.sh ~/Downloads/Install_NDI_SDK_v6_Linux.tar.gz
-```
-
-Then build:
-
-```bash
-./make-pi-image.command
-```
-
-The lower-level builder still works directly:
-
-```bash
-ACCEPT_NDI_SDK_LICENSE=1 NDI_SDK_TARBALL=/path/to/Install_NDI_SDK_v6_Linux.tar.gz ./deploy/pi-image/build-image.sh
-```
-
-Or, after the SDK is cached:
-
-```bash
-ACCEPT_NDI_SDK_LICENSE=1 ./deploy/pi-image/build-image.sh
-```
-
-The image lands under:
-
-```bash
+```text
 .pi-image-build/pi-gen/deploy/
 ```
 
-Use the `image_YYYY-MM-DD-anchor-mics-pi.img.xz` file. The builder disables pi-gen's stock stage2/stage4 exports so this image includes `/opt/anchor-mics` and the systemd services.
+Use the newest `.img.xz` file with Raspberry Pi Imager.
 
-## Default Image Behavior
+## What The Builder Does
+
+- Downloads Raspberry Pi OS build files through pi-gen.
+- Copies News Talent Monitor+ into `/opt/anchor-mics`.
+- Installs Python dependencies.
+- Installs the NDI runtime from the SDK archive.
+- Enables the app and kiosk services.
+- Produces a flashable `.img.xz`.
+
+## Default Image Values
 
 - Hostname: `anchor-mics`
 - User: `cci`
 - Password: `anchor`
-- App URL: `http://127.0.0.1:8010/display`
-- Config GUI: `http://<pi-ip>:8010/config`
+- App URL on the Pi: `http://127.0.0.1:8010/display`
+- Config page from another computer: `http://<pi-ip>:8010/config`
 
-Change the password after first boot.
+Change the password after first boot if the Pi will stay on a production network.
 
-## NDI Notes
+## NDI License Note
 
-The app uses the NDI SDK runtime dynamically through `libndi.so`. The repo does not include the SDK runtime because it is proprietary.
+The repo does not include the NDI SDK. You provide the SDK archive yourself.
 
-If you build without `NDI_SDK_TARBALL`, the image still boots and runs the app. A Windows user can copy the Linux SDK archive and `ACCEPT_NDI_SDK_LICENSE.txt` to the flashed boot drive under `NewsTalentMonitor/`; the Pi will install the NDI runtime on first boot.
+When you type `y` during the build, you are confirming that you accept the NDI SDK license for embedding the runtime into the image you are creating.
