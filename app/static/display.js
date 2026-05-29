@@ -1,8 +1,8 @@
 const clockTimeEl = document.getElementById('clockTime')
 const showDateEl = document.getElementById('showDate')
 const showTitleEl = document.getElementById('showTitle')
+const onAirSourceEl = document.getElementById('onAirSource')
 const previewFrameEl = document.getElementById('previewFrame')
-const previewSourceEl = document.getElementById('previewSource')
 const micStripEl = document.getElementById('micStrip')
 
 let refreshHandle = null
@@ -124,19 +124,21 @@ function renderMicTiles(mics) {
       const fontSize = nameFontSize(title)
       const fontStyle = fontSize ? ` style="--name-font-size: ${escapeHtml(fontSize)}"` : ''
       return `
-        <article class="mic-tile ${escapeHtml(mic.health)}">
-          <div class="mic-person ${personClass}">
-            ${photoMarkup}
-            <div class="mic-person-text"${fontStyle}>
-              <h2 class="mic-title">${escapeHtml(title)}</h2>
-              <div class="mic-subtitle">${escapeHtml(subtitle)}</div>
+        <article class="mic-tile ${escapeHtml(mic.health)} ${personClass}">
+          ${photoMarkup}
+          <div class="mic-content">
+            <div class="mic-person">
+              <div class="mic-person-text"${fontStyle}>
+                <h2 class="mic-title">${escapeHtml(title)}</h2>
+                <div class="mic-subtitle">${escapeHtml(subtitle)}</div>
+              </div>
             </div>
-          </div>
-          <div class="mic-main">${main}</div>
-          <div class="mic-stats">
-            <span>BAT ${escapeHtml(`${Math.round(Number(mic.battery_percent || 0))}%`)}</span>
-            <span>RF ${escapeHtml(`${Math.round(Number(mic.signal_strength || 0))}%`)}</span>
-            <span>AUD ${escapeHtml(`${Math.round(Number(mic.audio_level || 0))}%`)}</span>
+            <div class="mic-main">${main}</div>
+            <div class="mic-stats">
+              <span>BAT ${escapeHtml(`${Math.round(Number(mic.battery_percent || 0))}%`)}</span>
+              <span>RF ${escapeHtml(`${Math.round(Number(mic.signal_strength || 0))}%`)}</span>
+              <span>AUD ${escapeHtml(`${Math.round(Number(mic.audio_level || 0))}%`)}</span>
+            </div>
           </div>
         </article>
       `
@@ -152,8 +154,8 @@ function handleAnchorPhotoError(img) {
     img.src = urls[nextIndex]
     return
   }
-  img.closest('.mic-person')?.classList.remove('has-photo')
-  img.closest('.mic-person')?.classList.add('no-photo')
+  img.closest('.mic-tile')?.classList.remove('has-photo')
+  img.closest('.mic-tile')?.classList.add('no-photo')
   img.remove()
 }
 
@@ -165,8 +167,6 @@ function renderPreview(display) {
   const sourceName = String(display.preview_source_name || '').trim()
   const posterUrl = String(display.preview_poster_url || '')
   const signature = JSON.stringify([previewMode, previewUrl, sourceName, posterUrl])
-
-  previewSourceEl.textContent = sourceName || 'NDI source not configured'
 
   if (signature === previewSignature) return
   previewSignature = signature
@@ -242,9 +242,7 @@ function startNdiPreview() {
         }
       }
     } catch (error) {
-      if (error?.name !== 'AbortError') {
-        previewSourceEl.textContent = errorText(error)
-      }
+      if (error?.name !== 'AbortError') console.warn(errorText(error))
     } finally {
       ndiPreviewAbort = null
       if (document.getElementById('ndiPreviewImage') === img) {
@@ -260,6 +258,7 @@ function renderState(state) {
   const display = state.display || {}
   const titleText = String(display.show_title || display.manual_show_title || 'Anchor Mics').trim()
   showTitleEl.textContent = titleText.toUpperCase()
+  onAirSourceEl.textContent = String(display.on_air_source_name || '').trim().toUpperCase()
   renderPreview(display)
   renderMicTiles(state.mics || [])
 
@@ -287,14 +286,14 @@ async function start() {
     await fetchState()
   } catch (error) {
     showTitleEl.textContent = 'ANCHOR MICS'
-    previewSourceEl.textContent = errorText(error)
+    onAirSourceEl.textContent = errorText(error)
     renderPreview({ preview_mode: 'placeholder', preview_source_name: 'Preview unavailable' })
     renderMicTiles([])
   }
 
   refreshHandle = window.setInterval(() => {
     fetchState().catch((error) => {
-      previewSourceEl.textContent = errorText(error)
+      onAirSourceEl.textContent = errorText(error)
     })
   }, 2000)
 }

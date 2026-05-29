@@ -25,7 +25,7 @@ From the repo root:
 
 That command:
 
-- finds `/Users/wtapper/Downloads/Install_NDI_SDK_v6_Linux.tar.gz`
+- finds `~/Downloads/Install_NDI_SDK_v6_Linux.tar.gz`
 - copies it into the untracked build cache at `.pi-image-build/ndi/`
 - asks you to confirm the NDI SDK license
 - builds the custom Raspberry Pi image with the NDI runtime embedded
@@ -33,7 +33,7 @@ That command:
 If you want to cache the SDK manually first:
 
 ```bash
-./deploy/pi-image/prepare-ndi-sdk.sh /Users/wtapper/Downloads/Install_NDI_SDK_v6_Linux.tar.gz
+./deploy/pi-image/prepare-ndi-sdk.sh ~/Downloads/Install_NDI_SDK_v6_Linux.tar.gz
 ```
 
 Then build:

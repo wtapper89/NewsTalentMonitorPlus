@@ -8,6 +8,11 @@
   </head>
   <body>
     <main class="display-shell">
+      <a class="kiosk-menu" href="/config" title="Open config" aria-label="Open config">
+        <span></span>
+        <span></span>
+        <span></span>
+      </a>
       <header class="display-header">
         <div class="clock-block">
           <span class="clock-time" id="clockTime">--:--:-- --</span>
@@ -16,15 +21,13 @@
           <h1 class="show-title" id="showTitle">ANCHOR MICS</h1>
         </div>
         <div class="date-block">
+          <span class="on-air-source" id="onAirSource"></span>
           <span class="show-date" id="showDate">---</span>
         </div>
       </header>
 
       <section class="preview-shell">
         <div class="preview-frame" id="previewFrame"></div>
-        <div class="preview-overlay">
-          <span class="preview-source" id="previewSource">NDI source not configured</span>
-        </div>
       </section>
 
       <section class="mic-strip" id="micStrip"></section>

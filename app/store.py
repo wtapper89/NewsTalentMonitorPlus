@@ -30,6 +30,7 @@ DEFAULT_COMPANION = {
     "base_url": "http://127.0.0.1:8000",
     "connection_label": "Cuez",
     "variable_name": "",
+    "on_air_source_variable_name": "",
 }
 
 DEFAULT_ANCHOR_PHOTOS = {
@@ -176,6 +177,7 @@ def _normalize_companion(raw_companion: dict | None) -> dict:
     companion["base_url"] = str(companion.get("base_url") or DEFAULT_COMPANION["base_url"]).strip().rstrip("/")
     companion["connection_label"] = str(companion.get("connection_label") or DEFAULT_COMPANION["connection_label"]).strip()
     companion["variable_name"] = str(companion.get("variable_name") or "").strip()
+    companion["on_air_source_variable_name"] = str(companion.get("on_air_source_variable_name") or "").strip()
     return companion
 
 

@@ -14,7 +14,7 @@ Anchor Mics is a local control-room dashboard and fullscreen display for Shure m
 ## Run this on your Mac
 
 ```bash
-cd /Users/wtapper/Library/CloudStorage/OneDrive-UniversityofTennessee/Documents/CodexProjects/AnchorMics
+cd /path/to/AnchorMics
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
@@ -30,7 +30,7 @@ Then open:
 If you stop and restart later:
 
 ```bash
-cd /Users/wtapper/Library/CloudStorage/OneDrive-UniversityofTennessee/Documents/CodexProjects/AnchorMics
+cd /path/to/AnchorMics
 . .venv/bin/activate
 python run.py
 ```
@@ -87,7 +87,7 @@ If you previously started the app with `ANCHOR_MICS_SOURCE=micboard`, that value
 
 ## Companion integration
 
-The Companion module lives in [`companion-module-anchor-mics`](/Users/wtapper/Library/CloudStorage/OneDrive-UniversityofTennessee/Documents/CodexProjects/AnchorMics/companion-module-anchor-mics).
+The Companion module lives in [`companion-module-anchor-mics`](companion-module-anchor-mics).
 
 It polls `/api/companion/state` from the Python app and exposes:
 
@@ -130,7 +130,7 @@ NDI diagnostics:
 
 ## Raspberry Pi boot setup
 
-Systemd and kiosk launcher templates are in [`deploy/raspberry-pi`](/Users/wtapper/Library/CloudStorage/OneDrive-UniversityofTennessee/Documents/CodexProjects/AnchorMics/deploy/raspberry-pi/README.md#L1).
+Systemd and kiosk launcher templates are in [`deploy/raspberry-pi`](deploy/raspberry-pi/README.md).
 
 They provide:
 
@@ -140,7 +140,7 @@ They provide:
 
 ## Custom Pi image
 
-A Docker/pi-gen image build is in [`deploy/pi-image`](/Users/wtapper/Library/CloudStorage/OneDrive-UniversityofTennessee/Documents/CodexProjects/AnchorMics/deploy/pi-image/README.md#L1).
+A Docker/pi-gen image build is in [`deploy/pi-image`](deploy/pi-image/README.md).
 
 Open Docker Desktop first and wait until the engine is running.
 
@@ -150,7 +150,7 @@ Build the image with:
 ./make-pi-image.command
 ```
 
-That wrapper auto-detects the NDI SDK archive at `/Users/wtapper/Downloads/Install_NDI_SDK_v6_Linux.tar.gz`, caches it under `.pi-image-build/ndi/`, asks for license confirmation, and embeds the runtime into the image.
+That wrapper auto-detects the NDI SDK archive at `~/Downloads/Install_NDI_SDK_v6_Linux.tar.gz`, caches it under `.pi-image-build/ndi/`, asks for license confirmation, and embeds the runtime into the image.
 
 If the SDK archive is somewhere else:
 
@@ -172,7 +172,7 @@ python3 -m unittest discover -s tests
 ## Notes
 
 - This repo ships in `mock` mode by default because the workspace does not have direct access to your Shure hardware.
-- The config page writes to [`config/system_api_mapping.example.json`](/Users/wtapper/Library/CloudStorage/OneDrive-UniversityofTennessee/Documents/CodexProjects/AnchorMics/config/system_api_mapping.example.json#L1) unless you point `ANCHOR_MICS_MAPPING_FILE` somewhere else.
+- The config page writes to [`config/system_api_mapping.example.json`](config/system_api_mapping.example.json) unless you point `ANCHOR_MICS_MAPPING_FILE` somewhere else.
 - The Companion module is included but not packaged here because this machine does not currently have Node/Yarn installed.
 - Official references used while shaping this MVP:
   - Shure System API Server documentation: [shure.stoplight.io/docs/shure-system-api-server-specification](https://shure.stoplight.io/docs/shure-system-api-server-specification/c30bd45807650-shure-system-api-server)

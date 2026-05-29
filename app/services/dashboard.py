@@ -264,6 +264,8 @@ class DashboardService:
             "companion_base_url": DEFAULT_COMPANION["base_url"],
             "companion_connection_label": DEFAULT_COMPANION["connection_label"],
             "companion_variable_name": DEFAULT_COMPANION["variable_name"],
+            "on_air_source_name": "",
+            "on_air_source_variable_name": DEFAULT_COMPANION["on_air_source_variable_name"],
             "anchor_photos_enabled": DEFAULT_ANCHOR_PHOTOS["enabled"],
             "anchor_photos_base_url": DEFAULT_ANCHOR_PHOTOS["base_url"],
             "anchor_photos_share_path": DEFAULT_ANCHOR_PHOTOS["share_path"],
@@ -281,6 +283,8 @@ class DashboardService:
         show_title = manual_title
         show_title_source = "manual"
         show_title_error = ""
+        on_air_source_name = ""
+        on_air_source_error = ""
 
         if (
             str(display.get("show_title_mode") or "manual").lower() == "companion"
@@ -309,6 +313,26 @@ class DashboardService:
                 show_title_source = str(self._display_context.get("show_title_source") or "manual")
                 show_title_error = str(exc)
 
+        if (
+            companion.get("enabled")
+            and str(companion.get("base_url") or "").strip()
+            and str(companion.get("connection_label") or "").strip()
+            and str(companion.get("on_air_source_variable_name") or "").strip()
+        ):
+            try:
+                on_air_connection_label, on_air_variable_name = self._companion_lookup_parts(
+                    companion,
+                    str(companion["on_air_source_variable_name"]),
+                )
+                on_air_source_name = await self._fetch_companion_variable(
+                    str(companion["base_url"]),
+                    on_air_connection_label,
+                    on_air_variable_name,
+                )
+            except Exception as exc:
+                on_air_source_name = str(self._display_context.get("on_air_source_name") or "")
+                on_air_source_error = str(exc)
+
         return {
             "show_title": show_title or manual_title,
             "show_title_source": show_title_source,
@@ -324,6 +348,9 @@ class DashboardService:
             "companion_base_url": str(companion.get("base_url") or DEFAULT_COMPANION["base_url"]),
             "companion_connection_label": str(companion.get("connection_label") or DEFAULT_COMPANION["connection_label"]),
             "companion_variable_name": str(companion.get("variable_name") or ""),
+            "on_air_source_name": on_air_source_name,
+            "on_air_source_error": on_air_source_error,
+            "on_air_source_variable_name": str(companion.get("on_air_source_variable_name") or ""),
             "anchor_photos_enabled": bool((mapping.get("anchor_photos") or {}).get("enabled")),
             "anchor_photos_base_url": str((mapping.get("anchor_photos") or {}).get("base_url") or ""),
             "anchor_photos_share_path": str((mapping.get("anchor_photos") or {}).get("share_path") or ""),

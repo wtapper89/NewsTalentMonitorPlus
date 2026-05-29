@@ -158,6 +158,10 @@ function buildGlobalFields() {
           <span class="field-label">Variable name</span>
           <input type="text" value="${escapeHtml(companion.variable_name ?? '')}" data-global-field="companion.variable_name" placeholder="segment_title" />
         </label>
+        <label class="stack">
+          <span class="field-label">On-air source variable</span>
+          <input type="text" value="${escapeHtml(companion.on_air_source_variable_name ?? '')}" data-global-field="companion.on_air_source_variable_name" placeholder="CurrentSource" />
+        </label>
       </div>
     </article>
 
@@ -182,7 +186,7 @@ function buildGlobalFields() {
         </label>
         <label class="stack">
           <span class="field-label">HTTP folder URL</span>
-          <input type="text" value="${escapeHtml(anchorPhotos.base_url ?? '')}" data-global-field="anchor_photos.base_url" placeholder="http://10.46.161.168:8090/" />
+          <input type="text" value="${escapeHtml(anchorPhotos.base_url ?? '')}" data-global-field="anchor_photos.base_url" placeholder="http://vmix-host:8090/" />
         </label>
         <label class="stack">
           <span class="field-label">Username</span>
@@ -404,6 +408,7 @@ function normalizeForSave() {
       base_url: String(configState.companion.base_url || 'http://127.0.0.1:8000').trim(),
       connection_label: String(configState.companion.connection_label || 'Cuez').trim(),
       variable_name: String(configState.companion.variable_name || '').trim(),
+      on_air_source_variable_name: String(configState.companion.on_air_source_variable_name || '').trim(),
     },
     anchor_photos: {
       enabled: Boolean(configState.anchor_photos.enabled),

@@ -242,6 +242,42 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(state["display"]["show_title"], "Election Special")
         self.assertEqual(state["display"]["show_title_source"], "companion")
 
+    async def test_companion_variable_can_drive_on_air_source(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            self.assertEqual(
+                str(request.url),
+                "http://127.0.0.1:8000/api/variable/custom/OnAir/value",
+            )
+            return httpx.Response(200, json="Studio Camera 2")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mapping_file = Path(temp_dir) / "mapping.json"
+            MappingStore(mapping_file).save(
+                {
+                    "companion": {
+                        "enabled": True,
+                        "base_url": "http://127.0.0.1:8000",
+                        "connection_label": "custom",
+                        "on_air_source_variable_name": "OnAir",
+                    },
+                }
+            )
+            client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            service = DashboardService(
+                MockShureAdapter(),
+                StateStore(Path(temp_dir) / "state.json"),
+                "mock",
+                2,
+                mapping_store=MappingStore(mapping_file),
+                client=client,
+            )
+
+            state = await service.refresh()
+            await service.close()
+            await client.aclose()
+
+        self.assertEqual(state["display"]["on_air_source_name"], "Studio Camera 2")
+
     async def test_companion_variable_can_drive_mic_assignment(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             self.assertEqual(

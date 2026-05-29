@@ -121,6 +121,7 @@ class CompanionConfigRequest(BaseModel):
     base_url: str = Field(default="http://127.0.0.1:8000", max_length=255)
     connection_label: str = Field(default="Cuez", max_length=128)
     variable_name: str = Field(default="", max_length=128)
+    on_air_source_variable_name: str = Field(default="", max_length=128)
 
 
 class AnchorPhotosConfigRequest(BaseModel):
