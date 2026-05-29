@@ -11,7 +11,8 @@ from urllib.parse import quote
 import httpx
 
 from app.models import MicSnapshot
-from app.store import DEFAULT_COMPANION, DEFAULT_DISPLAY, MappingStore
+from app.services.photos import AnchorPhotoResolver
+from app.store import DEFAULT_ANCHOR_PHOTOS, DEFAULT_COMPANION, DEFAULT_DISPLAY, MappingStore
 from app.store import StateStore
 
 
@@ -41,6 +42,7 @@ class DashboardService:
         self._telemetry_history: dict[str, dict[str, deque[tuple[float, int]]]] = {}
         self._client = client
         self._owns_client = client is None
+        self._photo_resolver = AnchorPhotoResolver()
         self._display_context = self._default_display_context()
         self._state = self._build_state([], "starting", "Connecting to source")
 
@@ -58,8 +60,20 @@ class DashboardService:
         async with self._lock:
             try:
                 mics = await self.adapter.refresh()
+                mapping = self.mapping_store.load() if self.mapping_store is not None else {}
+                companion = {**DEFAULT_COMPANION, **(mapping.get("companion") or {})}
+                mic_configs = {str(mic.get("id") or ""): mic for mic in mapping.get("mics", [])}
                 for mic in mics:
                     mic.assigned_to = self.store.get_assignment(mic.id)
+                    try:
+                        companion_assignment = await self._resolve_companion_assignment(
+                            companion,
+                            str((mic_configs.get(mic.id) or {}).get("assignment_variable_name") or ""),
+                        )
+                        if companion_assignment:
+                            mic.assigned_to = companion_assignment
+                    except Exception as exc:
+                        mic.errors.append(f"Companion assignment unavailable: {exc}")
                     if self.source == "micboard":
                         override_name = self.store.get_name_override(mic.id)
                         if override_name:
@@ -115,10 +129,16 @@ class DashboardService:
         }
 
     def _build_state(self, mics: list[MicSnapshot], connection_status: str, connection_message: str) -> dict:
+        photo_config = DEFAULT_ANCHOR_PHOTOS
+        if self.mapping_store is not None:
+            mapping = self.mapping_store.load()
+            photo_config = {**DEFAULT_ANCHOR_PHOTOS, **(mapping.get("anchor_photos") or {})}
+
         mic_payload = []
         for mic in mics:
             payload = mic.to_dict()
             payload["history"] = self._history_payload_for(mic.id)
+            payload["anchor_photo_url"] = self._photo_resolver.photo_url_for(mic.assigned_to, photo_config)
             mic_payload.append(payload)
         summary = {
             "total": len(mic_payload),
@@ -242,6 +262,8 @@ class DashboardService:
             "companion_base_url": DEFAULT_COMPANION["base_url"],
             "companion_connection_label": DEFAULT_COMPANION["connection_label"],
             "companion_variable_name": DEFAULT_COMPANION["variable_name"],
+            "anchor_photos_enabled": DEFAULT_ANCHOR_PHOTOS["enabled"],
+            "anchor_photos_share_path": DEFAULT_ANCHOR_PHOTOS["share_path"],
         }
 
     async def _resolve_display_context(self) -> dict:
@@ -295,7 +317,23 @@ class DashboardService:
             "companion_base_url": str(companion.get("base_url") or DEFAULT_COMPANION["base_url"]),
             "companion_connection_label": str(companion.get("connection_label") or DEFAULT_COMPANION["connection_label"]),
             "companion_variable_name": str(companion.get("variable_name") or ""),
+            "anchor_photos_enabled": bool((mapping.get("anchor_photos") or {}).get("enabled")),
+            "anchor_photos_share_path": str((mapping.get("anchor_photos") or {}).get("share_path") or ""),
         }
+
+    async def _resolve_companion_assignment(self, companion: dict, variable_name: str) -> str:
+        if (
+            not companion.get("enabled")
+            or not str(companion.get("base_url") or "").strip()
+            or not str(companion.get("connection_label") or "").strip()
+            or not variable_name.strip()
+        ):
+            return ""
+        return await self._fetch_companion_variable(
+            str(companion["base_url"]),
+            str(companion["connection_label"]),
+            variable_name,
+        )
 
     async def _fetch_companion_variable(self, base_url: str, connection_label: str, variable_name: str) -> str:
         url = (

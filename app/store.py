@@ -32,6 +32,15 @@ DEFAULT_COMPANION = {
     "variable_name": "",
 }
 
+DEFAULT_ANCHOR_PHOTOS = {
+    "enabled": False,
+    "share_path": "",
+    "username": "",
+    "password": "",
+    "domain": "",
+    "timeout_seconds": 4,
+}
+
 
 def default_mic_entry(index: int, name: str, receiver: str, channel: str) -> dict:
     return {
@@ -50,6 +59,7 @@ def default_mic_entry(index: int, name: str, receiver: str, channel: str) -> dic
         "rename_method": "PUT",
         "rename_body": {"name": "{name}"},
         "fields": deepcopy(DEFAULT_FIELDS),
+        "assignment_variable_name": "",
     }
 
 
@@ -69,6 +79,7 @@ DEFAULT_MAPPING = {
     },
     "display": deepcopy(DEFAULT_DISPLAY),
     "companion": deepcopy(DEFAULT_COMPANION),
+    "anchor_photos": deepcopy(DEFAULT_ANCHOR_PHOTOS),
     "default_connection": {
         "scheme": "tcp",
         "port": 2202,
@@ -136,6 +147,7 @@ def _normalize_mic_entry(raw_entry: dict, default_connection: dict) -> dict:
     entry["rename_method"] = str(entry.get("rename_method", "PUT") or "PUT").upper()
     entry["rename_body"] = entry.get("rename_body") or {"name": "{name}"}
     entry["fields"] = {**DEFAULT_FIELDS, **(entry.get("fields") or {})}
+    entry["assignment_variable_name"] = str(entry.get("assignment_variable_name") or "").strip()
     entry["telemetry_url"] = telemetry_url
     entry["rename_url"] = rename_url
     return entry
@@ -164,6 +176,17 @@ def _normalize_companion(raw_companion: dict | None) -> dict:
     companion["connection_label"] = str(companion.get("connection_label") or DEFAULT_COMPANION["connection_label"]).strip()
     companion["variable_name"] = str(companion.get("variable_name") or "").strip()
     return companion
+
+
+def _normalize_anchor_photos(raw_anchor_photos: dict | None) -> dict:
+    anchor_photos = {**DEFAULT_ANCHOR_PHOTOS, **(raw_anchor_photos or {})}
+    anchor_photos["enabled"] = bool(anchor_photos.get("enabled"))
+    anchor_photos["share_path"] = str(anchor_photos.get("share_path") or "").strip()
+    anchor_photos["username"] = str(anchor_photos.get("username") or "").strip()
+    anchor_photos["password"] = str(anchor_photos.get("password") or "")
+    anchor_photos["domain"] = str(anchor_photos.get("domain") or "").strip()
+    anchor_photos["timeout_seconds"] = int(anchor_photos.get("timeout_seconds") or 4)
+    return anchor_photos
 
 
 class StateStore:
@@ -232,6 +255,7 @@ class MappingStore:
         mapping["micboard"].update(raw.get("micboard", {}))
         mapping["display"] = _normalize_display(raw.get("display"))
         mapping["companion"] = _normalize_companion(raw.get("companion"))
+        mapping["anchor_photos"] = _normalize_anchor_photos(raw.get("anchor_photos"))
         mapping["default_connection"].update(raw.get("default_connection", {}))
 
         if "mics" in raw:

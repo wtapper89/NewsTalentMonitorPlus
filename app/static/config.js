@@ -21,6 +21,7 @@ let configState = {
   micboard: {},
   display: {},
   companion: {},
+  anchor_photos: {},
   auth: {},
   default_connection: {},
   mics: [],
@@ -46,6 +47,7 @@ function buildGlobalFields() {
   const defaults = configState.default_connection || {}
   const display = configState.display || {}
   const companion = configState.companion || {}
+  const anchorPhotos = configState.anchor_photos || {}
 
   globalConfigEl.innerHTML = `
     <article class="config-card">
@@ -132,8 +134,8 @@ function buildGlobalFields() {
     <article class="config-card">
       <div class="config-card-head">
         <div>
-          <h3>Companion title source</h3>
-          <p>Read a module variable from Companion, such as a Cuez show title.</p>
+          <h3>Companion source</h3>
+          <p>Read show title and per-mic anchor assignments from Companion variables.</p>
         </div>
       </div>
       <div class="config-card-grid">
@@ -155,6 +157,44 @@ function buildGlobalFields() {
         <label class="stack">
           <span class="field-label">Variable name</span>
           <input type="text" value="${escapeHtml(companion.variable_name ?? '')}" data-global-field="companion.variable_name" placeholder="segment_title" />
+        </label>
+      </div>
+    </article>
+
+    <article class="config-card">
+      <div class="config-card-head">
+        <div>
+          <h3>Anchor photos</h3>
+          <p>Match assignment names to files on a Windows share, such as JohnSmith.png.</p>
+        </div>
+      </div>
+      <div class="config-card-grid">
+        <label class="stack">
+          <span class="field-label">Enable photos</span>
+          <select data-global-field="anchor_photos.enabled">
+            <option value="true" ${anchorPhotos.enabled ? 'selected' : ''}>true</option>
+            <option value="false" ${!anchorPhotos.enabled ? 'selected' : ''}>false</option>
+          </select>
+        </label>
+        <label class="stack">
+          <span class="field-label">Windows share path</span>
+          <input type="text" value="${escapeHtml(anchorPhotos.share_path ?? '')}" data-global-field="anchor_photos.share_path" placeholder="\\\\servername\\folder" />
+        </label>
+        <label class="stack">
+          <span class="field-label">Username</span>
+          <input type="text" value="${escapeHtml(anchorPhotos.username ?? '')}" data-global-field="anchor_photos.username" />
+        </label>
+        <label class="stack">
+          <span class="field-label">Password</span>
+          <input type="password" value="${escapeHtml(anchorPhotos.password ?? '')}" data-global-field="anchor_photos.password" />
+        </label>
+        <label class="stack">
+          <span class="field-label">Domain</span>
+          <input type="text" value="${escapeHtml(anchorPhotos.domain ?? '')}" data-global-field="anchor_photos.domain" />
+        </label>
+        <label class="stack">
+          <span class="field-label">Timeout seconds</span>
+          <input type="number" min="1" max="30" value="${escapeHtml(anchorPhotos.timeout_seconds ?? 4)}" data-global-field="anchor_photos.timeout_seconds" />
         </label>
       </div>
     </article>
@@ -252,6 +292,10 @@ function buildMicCards() {
               <input type="text" value="${escapeHtml(mic.assigned_to ?? '')}" data-mic-index="${index}" data-mic-field="assigned_to" placeholder="Lead Pastor" />
             </label>
             <label class="stack">
+              <span class="field-label">Companion assignment variable</span>
+              <input type="text" value="${escapeHtml(mic.assignment_variable_name ?? '')}" data-mic-index="${index}" data-mic-field="assignment_variable_name" placeholder="mic_1_anchor" />
+            </label>
+            <label class="stack">
               <span class="field-label">Receiver label</span>
               <input type="text" value="${escapeHtml(mic.receiver_name ?? '')}" data-mic-index="${index}" data-mic-field="receiver_name" />
             </label>
@@ -327,6 +371,7 @@ function newMicConfig() {
     telemetry_method: 'GET',
     rename_path: '',
     rename_method: 'PUT',
+    assignment_variable_name: '',
     fields: { ...DEFAULT_FIELDS },
     rename_body: { name: '{name}' },
   }
@@ -356,6 +401,14 @@ function normalizeForSave() {
       connection_label: String(configState.companion.connection_label || 'Cuez').trim(),
       variable_name: String(configState.companion.variable_name || '').trim(),
     },
+    anchor_photos: {
+      enabled: Boolean(configState.anchor_photos.enabled),
+      share_path: String(configState.anchor_photos.share_path || '').trim(),
+      username: String(configState.anchor_photos.username || '').trim(),
+      password: String(configState.anchor_photos.password || ''),
+      domain: String(configState.anchor_photos.domain || '').trim(),
+      timeout_seconds: Number(configState.anchor_photos.timeout_seconds || 4),
+    },
     auth: {
       type: authType,
       token_url: String(configState.auth.token_url || '').trim(),
@@ -384,6 +437,7 @@ function normalizeForSave() {
       telemetry_method: 'GET',
       rename_path: String(mic.rename_path || '').trim(),
       rename_method: 'PUT',
+      assignment_variable_name: String(mic.assignment_variable_name || '').trim(),
       fields: mic.fields || { ...DEFAULT_FIELDS },
       rename_body: mic.rename_body || { name: '{name}' },
     })),

@@ -94,14 +94,27 @@ function renderMicTiles(mics) {
   micStripEl.innerHTML = mics
     .map((mic, index) => {
       const message = tileStatusMessage(mic)
-      const subtitle = mic.assigned_to || mic.channel_label || mic.receiver_name || `Mic ${index + 1}`
+      const title = mic.assigned_to || mic.display_name || `Mic ${index + 1}`
+      const subtitle = mic.assigned_to
+        ? mic.display_name || mic.channel_label || mic.receiver_name || `Mic ${index + 1}`
+        : mic.channel_label || mic.receiver_name || `Mic ${index + 1}`
       const main = message
         ? `<div class="mic-message">${escapeHtml(message)}</div>`
         : batteryMarkup(mic)
+      const photoUrl = String(mic.anchor_photo_url || '')
+      const photoMarkup = photoUrl
+        ? `<img class="anchor-photo" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(title)}" />`
+        : ''
+      const personClass = photoUrl ? 'has-photo' : 'no-photo'
       return `
         <article class="mic-tile ${escapeHtml(mic.health)}">
-          <h2 class="mic-title">${escapeHtml(mic.display_name || `Mic ${index + 1}`)}</h2>
-          <div class="mic-subtitle">${escapeHtml(subtitle)}</div>
+          <div class="mic-person ${personClass}">
+            ${photoMarkup}
+            <div class="mic-person-text">
+              <h2 class="mic-title">${escapeHtml(title)}</h2>
+              <div class="mic-subtitle">${escapeHtml(subtitle)}</div>
+            </div>
+          </div>
           <div class="mic-main">${main}</div>
           <div class="mic-stats">
             <span>BAT ${escapeHtml(`${Math.round(Number(mic.battery_percent || 0))}%`)}</span>

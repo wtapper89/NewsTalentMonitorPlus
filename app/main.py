@@ -13,6 +13,7 @@ from app.config import ROOT_DIR, load_config
 from app.logs import configure_logging, recent_logs
 from app.services.dashboard import DashboardService
 from app.services.ndi import NDIBridge
+from app.services.photos import AnchorPhotoResolver
 from app.services.shure import MicboardAdapter, MockShureAdapter, QlxdAdapter, SystemApiAdapter
 from app.store import DEFAULT_FIELDS, MappingStore, StateStore
 
@@ -40,6 +41,7 @@ async def lifespan(app: FastAPI):
         mapping_store=mapping_store,
     )
     ndi_bridge = NDIBridge()
+    photo_resolver = AnchorPhotoResolver()
 
     stop_event = asyncio.Event()
 
@@ -57,6 +59,7 @@ async def lifespan(app: FastAPI):
     app.state.mapping_store = mapping_store
     app.state.runtime_config = config
     app.state.ndi_bridge = ndi_bridge
+    app.state.photo_resolver = photo_resolver
 
     try:
         yield
@@ -120,6 +123,15 @@ class CompanionConfigRequest(BaseModel):
     variable_name: str = Field(default="", max_length=128)
 
 
+class AnchorPhotosConfigRequest(BaseModel):
+    enabled: bool = Field(default=False)
+    share_path: str = Field(default="", max_length=1024)
+    username: str = Field(default="", max_length=255)
+    password: str = Field(default="", max_length=255)
+    domain: str = Field(default="", max_length=255)
+    timeout_seconds: int = Field(default=4, ge=1, le=30)
+
+
 class MicConnectionRequest(BaseModel):
     id: str = Field(min_length=1, max_length=64)
     default_name: str = Field(min_length=1, max_length=64)
@@ -134,6 +146,7 @@ class MicConnectionRequest(BaseModel):
     telemetry_method: str = Field(default="GET", max_length=16)
     rename_path: str = Field(default="", max_length=255)
     rename_method: str = Field(default="PUT", max_length=16)
+    assignment_variable_name: str = Field(default="", max_length=128)
     fields: dict[str, str] = Field(default_factory=lambda: dict(DEFAULT_FIELDS))
     rename_body: dict = Field(default_factory=lambda: {"name": "{name}"})
 
@@ -142,6 +155,7 @@ class ConfigUpdateRequest(BaseModel):
     micboard: MicboardConfigRequest = Field(default_factory=MicboardConfigRequest)
     display: DisplayConfigRequest = Field(default_factory=DisplayConfigRequest)
     companion: CompanionConfigRequest = Field(default_factory=CompanionConfigRequest)
+    anchor_photos: AnchorPhotosConfigRequest = Field(default_factory=AnchorPhotosConfigRequest)
     auth: AuthConfigRequest = Field(default_factory=AuthConfigRequest)
     default_connection: DefaultConnectionRequest = Field(default_factory=DefaultConnectionRequest)
     mics: list[MicConnectionRequest] = Field(default_factory=list)
@@ -167,6 +181,10 @@ def ndi_bridge_from(request: Request) -> NDIBridge:
     return request.app.state.ndi_bridge
 
 
+def photo_resolver_from(request: Request) -> AnchorPhotoResolver:
+    return request.app.state.photo_resolver
+
+
 def build_config_response(request: Request) -> dict:
     mapping = mapping_store_from(request).load()
     runtime_config = runtime_config_from(request)
@@ -182,6 +200,7 @@ def build_config_response(request: Request) -> dict:
         "micboard": mapping.get("micboard", {}),
         "display": mapping.get("display", {}),
         "companion": mapping.get("companion", {}),
+        "anchor_photos": mapping.get("anchor_photos", {}),
         "default_connection": mapping.get("default_connection", {}),
         "auth": mapping.get("auth", {}),
         "mics": mics,
@@ -322,6 +341,20 @@ async def get_ndi_latest(request: Request) -> Response:
             "Pragma": "no-cache",
             "Expires": "0",
             "X-Frame-Captured-At": f"{frame.captured_at:.6f}",
+        },
+    )
+
+
+@app.get("/api/anchor-photos/{anchor_name:path}")
+async def get_anchor_photo(anchor_name: str, request: Request) -> FileResponse:
+    mapping = mapping_store_from(request).load()
+    path = photo_resolver_from(request).photo_path_for(anchor_name, mapping.get("anchor_photos", {}))
+    if not path:
+        raise HTTPException(status_code=404, detail="Anchor photo not found")
+    return FileResponse(
+        path,
+        headers={
+            "Cache-Control": "public, max-age=300",
         },
     )
 

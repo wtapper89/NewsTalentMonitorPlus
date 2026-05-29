@@ -8,6 +8,7 @@ import httpx
 
 from app.models import MicSnapshot
 from app.services.dashboard import DashboardService
+from app.services.photos import normalized_anchor_filename, parse_unc_path
 from app.services.shure import (
     MicboardAdapter,
     MockShureAdapter,
@@ -99,6 +100,47 @@ class MappingStoreTests(unittest.TestCase):
             self.assertEqual(mapping["companion"]["base_url"], "http://127.0.0.1:8000")
             self.assertEqual(mapping["companion"]["variable_name"], "segment_title")
 
+    def test_mapping_store_normalizes_anchor_photos_and_assignment_variables(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mapping_file = Path(temp_dir) / "mapping.json"
+            mapping_file.write_text(
+                """
+                {
+                  "anchor_photos": {
+                    "enabled": true,
+                    "share_path": "\\\\\\\\server\\\\folder",
+                    "username": "anchor-user",
+                    "password": "secret"
+                  },
+                  "mics": [
+                    {
+                      "id": "mic-1",
+                      "default_name": "MIC 1",
+                      "assignment_variable_name": "mic_1_anchor"
+                    }
+                  ]
+                }
+                """.strip(),
+                encoding="utf-8",
+            )
+
+            mapping = MappingStore(mapping_file).load()
+
+            self.assertTrue(mapping["anchor_photos"]["enabled"])
+            self.assertEqual(mapping["anchor_photos"]["share_path"], "\\\\server\\folder")
+            self.assertEqual(mapping["mics"][0]["assignment_variable_name"], "mic_1_anchor")
+
+
+class AnchorPhotoTests(unittest.TestCase):
+    def test_anchor_photo_names_match_share_filenames(self) -> None:
+        self.assertEqual(normalized_anchor_filename("John Smith"), "JohnSmith")
+        self.assertEqual(normalized_anchor_filename("Dr. Amy O'Neil"), "DrAmyONeil")
+
+    def test_unc_path_is_split_for_smbclient(self) -> None:
+        service, remote_dir = parse_unc_path("\\\\server\\folder\\Headshots")
+        self.assertEqual(service, "//server/folder")
+        self.assertEqual(remote_dir, "Headshots")
+
 
 class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
     async def test_assignment_is_merged_into_state(self) -> None:
@@ -187,6 +229,48 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(state["display"]["show_title"], "Election Special")
         self.assertEqual(state["display"]["show_title_source"], "companion")
+
+    async def test_companion_variable_can_drive_mic_assignment(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            self.assertEqual(
+                str(request.url),
+                "http://127.0.0.1:8000/api/variable/Cuez/mic_1_anchor/value",
+            )
+            return httpx.Response(200, json="John Smith")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mapping_file = Path(temp_dir) / "mapping.json"
+            MappingStore(mapping_file).save(
+                {
+                    "companion": {
+                        "enabled": True,
+                        "base_url": "http://127.0.0.1:8000",
+                        "connection_label": "Cuez",
+                    },
+                    "mics": [
+                        {
+                            "id": "mic-1",
+                            "default_name": "MIC 1",
+                            "assignment_variable_name": "mic_1_anchor",
+                        }
+                    ],
+                }
+            )
+            client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            service = DashboardService(
+                MockShureAdapter(),
+                StateStore(Path(temp_dir) / "state.json"),
+                "mock",
+                2,
+                mapping_store=MappingStore(mapping_file),
+                client=client,
+            )
+
+            state = await service.refresh()
+            await service.close()
+            await client.aclose()
+
+        self.assertEqual(state["mics"][0]["assigned_to"], "John Smith")
 
     async def test_state_includes_trimmed_telemetry_history(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
