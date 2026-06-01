@@ -6,24 +6,25 @@ News Talent Monitor+ turns a Raspberry Pi into a front-of-camera talent monitor 
 
 ## Start Here
 
-If you are setting this up from scratch, use this guide first:
+The easiest install path is now the normal program installer for your operating system:
+
+```text
+Install on Windows.bat
+Install on macOS.command
+installers/windows/README.md
+installers/macos/README.md
+installers/raspberry-pi/README.md
+```
+
+These installers do not bundle the NDI SDK/runtime. They check for NDI and point you to the official NDI download if it is missing.
+
+The older custom Pi image guide is still available here:
 
 ```text
 docs/START_HERE.md
 ```
 
-That guide walks through:
-
-- downloading Docker Desktop
-- downloading the NDI SDK
-- creating the Raspberry Pi image with the NDI SDK embedded
-- flashing the image with Raspberry Pi Imager
-- opening the config page
-- setting up vMix/Companion variables
-- setting up Shure mics
-- setting up the Windows photo server
-
-If you already installed Raspberry Pi OS with Desktop and want a click-to-install app-style setup, see:
+The install-as-a-program design notes are here:
 
 ```text
 docs/INSTALL_AS_PROGRAM.md

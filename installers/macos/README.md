@@ -1,17 +1,73 @@
-# macOS Installer Notes
+# macOS Installer
 
-macOS app packaging is planned but not implemented yet.
+This folder contains a simple per-user macOS installer for News Talent Monitor+.
 
-The intended experience:
+It does not include the NDI SDK or NDI runtime. The installer checks for NDI and points the user to the official NDI download if it is missing.
 
-1. User downloads a `.pkg` or `.app`.
-2. Installer installs News Talent Monitor+ as a normal macOS app.
-3. First launch checks for the NDI runtime.
-4. If NDI is missing, the app points the user to the official NDI runtime/SDK download.
-5. The app does not bundle the NDI SDK unless the NDI license explicitly allows that distribution path.
+## Install
 
-NDI runtime check:
+1. Install Python 3 from:
 
-```bash
-python3 tools/ndi/check_ndi_runtime.py
+```text
+https://www.python.org/downloads/macos/
 ```
+
+2. Open this folder in Finder.
+3. Double-click:
+
+```text
+Install News Talent Monitor.command
+```
+
+If macOS blocks the file because it came from the internet, right-click it and choose `Open`.
+
+The installer:
+
+- Copies the app to `~/Applications/NewsTalentMonitorPlus`.
+- Creates a Python virtual environment.
+- Installs Python dependencies.
+- Creates a LaunchAgent so the app starts when the user logs in.
+- Checks whether the NDI runtime is installed.
+
+## NDI
+
+News Talent Monitor+ needs the official NDI runtime or SDK for native NDI video.
+
+Download it from:
+
+```text
+https://ndi.video/for-developers/ndi-sdk/download/
+```
+
+Then restart News Talent Monitor+.
+
+## URLs
+
+Display:
+
+```text
+http://127.0.0.1:8010/display
+```
+
+Config:
+
+```text
+http://127.0.0.1:8010/config
+```
+
+## Stop Or Uninstall
+
+After install, the helper commands are in:
+
+```text
+~/Applications/NewsTalentMonitorPlus/installers/macos
+```
+
+Use:
+
+- `Open Display.command`
+- `Open Config.command`
+- `stop-server.command`
+- `Uninstall News Talent Monitor.command`
+
+The uninstaller leaves user settings in `~/Library/Application Support/NewsTalentMonitorPlus` so they are not accidentally lost.

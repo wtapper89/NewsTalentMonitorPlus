@@ -65,30 +65,68 @@ The installer:
 
 ## Windows Install Direction
 
-Recommended package format:
+Current install path:
 
-- Build a Windows installer with a packaged Python app.
-- Do not include the NDI SDK.
-- During install or first launch, run the NDI runtime check.
-- If missing, direct the user to the official NDI runtime/SDK download or run an official redistributable if allowed by the NDI license.
+1. Install Python 3 from:
 
-Current repo status:
+```text
+https://www.python.org/downloads/windows/
+```
 
-- Windows photo-server helper batch files exist.
-- Full Windows app packaging is not implemented yet.
+2. Open:
+
+```text
+installers/windows
+```
+
+3. Double-click:
+
+```text
+Install News Talent Monitor.bat
+```
+
+The installer:
+
+- Copies the app to `%LOCALAPPDATA%\NewsTalentMonitorPlus`.
+- Creates the Python virtual environment.
+- Installs Python dependencies.
+- Creates desktop shortcuts for Display and Config.
+- Creates a Windows startup task so the app starts at login.
+- Checks for the NDI runtime.
+
+The app remains a source-based install for now. A future release can wrap this same flow in an Inno Setup, WiX, or MSIX installer.
 
 ## macOS Install Direction
 
-Recommended package format:
+Current install path:
 
-- Build a `.app` bundle or signed `.pkg`.
-- Do not include the NDI SDK.
-- During first launch, check common NDI runtime paths.
-- If missing, direct the user to install the official NDI runtime/SDK.
+1. Install Python 3 from:
 
-Current repo status:
+```text
+https://www.python.org/downloads/macos/
+```
 
-- macOS app packaging is not implemented yet.
+2. Open:
+
+```text
+installers/macos
+```
+
+3. Double-click:
+
+```text
+Install News Talent Monitor.command
+```
+
+The installer:
+
+- Copies the app to `~/Applications/NewsTalentMonitorPlus`.
+- Creates the Python virtual environment.
+- Installs Python dependencies.
+- Creates a LaunchAgent so the app starts at login.
+- Checks for the NDI runtime.
+
+The app remains a source-based install for now. A future release can wrap this same flow in a signed `.pkg` or `.app` bundle.
 
 ## NDI Runtime Check
 
@@ -103,3 +141,20 @@ Exit codes:
 - `0`: runtime found and loadable
 - `1`: runtime missing
 - `2`: runtime file found but could not be loaded
+
+## Build Shareable Installer Zips
+
+From the repo root on macOS or Linux:
+
+```bash
+tools/build_installer_archives.sh 0.1.0
+```
+
+That creates:
+
+```text
+dist/NewsTalentMonitorPlus-0.1.0-windows.zip
+dist/NewsTalentMonitorPlus-0.1.0-macos.zip
+```
+
+Those zip files contain the app source, the matching installer scripts, and the docs. They intentionally exclude git history, virtual environments, image-builder cache files, and generated build output.

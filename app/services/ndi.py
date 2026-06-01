@@ -135,7 +135,15 @@ class NDIlib:
             candidates.append(found)
 
         system = platform.system().lower()
-        if system == "darwin":
+        if system == "windows":
+            candidates.extend(
+                [
+                    r"C:\Program Files\NDI\NDI 6 Runtime\v6\Processing.NDI.Lib.x64.dll",
+                    r"C:\Program Files\NDI\NDI 5 Runtime\v5\Processing.NDI.Lib.x64.dll",
+                    r"C:\Program Files\NDI\NDI 5 Tools\Runtime\Processing.NDI.Lib.x64.dll",
+                ]
+            )
+        elif system == "darwin":
             candidates.extend(
                 [
                     "/usr/local/lib/libndi.dylib",

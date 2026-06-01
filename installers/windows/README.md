@@ -1,23 +1,67 @@
-# Windows Installer Notes
+# Windows Installer
 
-Windows app packaging is planned but not implemented yet.
+This folder contains a simple per-user Windows installer for News Talent Monitor+.
 
-The intended experience:
+It does not include the NDI SDK or NDI runtime. The installer checks for NDI and points the user to the official NDI download if it is missing.
 
-1. User downloads a Windows installer.
-2. Installer installs News Talent Monitor+ as a normal Windows app.
-3. First launch checks for the NDI runtime.
-4. If NDI is missing, the app points the user to the official NDI runtime/SDK download.
-5. The app does not bundle the NDI SDK unless the NDI license explicitly allows that distribution path.
+## Install
 
-The existing Windows helper today is only for hosting talent photos:
+1. Install Python 3 from:
 
 ```text
-tools\windows-photo-server
+https://www.python.org/downloads/windows/
 ```
 
-NDI runtime check:
+2. Open this folder.
+3. Double-click:
 
-```powershell
-python tools\ndi\check_ndi_runtime.py
+```text
+Install News Talent Monitor.bat
 ```
+
+The installer:
+
+- Copies the app to `%LOCALAPPDATA%\NewsTalentMonitorPlus`.
+- Creates a Python virtual environment.
+- Installs Python dependencies.
+- Creates a Windows startup task so the app starts when the user logs in.
+- Creates desktop shortcuts for Display and Config.
+- Checks whether the NDI runtime is installed.
+
+## NDI
+
+News Talent Monitor+ needs the official NDI runtime or SDK for native NDI video.
+
+Download it from:
+
+```text
+https://ndi.video/for-developers/ndi-sdk/download/
+```
+
+Then restart News Talent Monitor+.
+
+## URLs
+
+Display:
+
+```text
+http://127.0.0.1:8010/display
+```
+
+Config:
+
+```text
+http://127.0.0.1:8010/config
+```
+
+## Stop Or Uninstall
+
+Use the desktop shortcut named `Stop News Talent Monitor+` to stop the app.
+
+To remove the app, double-click:
+
+```text
+Uninstall News Talent Monitor.bat
+```
+
+The uninstaller leaves user settings in `%APPDATA%\NewsTalentMonitorPlus` so they are not accidentally lost.
