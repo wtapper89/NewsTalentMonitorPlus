@@ -1,31 +1,30 @@
-# Windows Installer
+# Windows Installer EXE
 
-This folder contains a simple per-user Windows installer for News Talent Monitor+.
+The recommended Windows install is a normal `.exe` installer:
+
+```text
+NewsTalentMonitorPlus-Setup.exe
+```
 
 It does not include the NDI SDK or NDI runtime. The installer checks for NDI and points the user to the official NDI download if it is missing.
 
 ## Install
 
-1. Install Python 3 from:
+1. Download `NewsTalentMonitorPlus-Setup.exe`.
+2. Double-click it.
+3. Leave `Create desktop shortcuts` checked unless you do not want shortcuts.
+4. At the end, leave these checked:
+   - `Check NDI runtime now`
+   - `Start News Talent Monitor+ now`
+   - `Open the config page`
 
-```text
-https://www.python.org/downloads/windows/
-```
-
-2. Open this folder.
-3. Double-click:
-
-```text
-Install News Talent Monitor.bat
-```
+Users do not need to run PowerShell scripts.
 
 The installer:
 
-- Copies the app to `%LOCALAPPDATA%\NewsTalentMonitorPlus`.
-- Creates a Python virtual environment.
-- Installs Python dependencies.
-- Creates a Windows startup task so the app starts when the user logs in.
+- Installs the packaged `NewsTalentMonitor.exe` app.
 - Creates desktop shortcuts for Display and Config.
+- Adds News Talent Monitor+ to the current user's Windows Startup folder.
 - Checks whether the NDI runtime is installed.
 
 ## NDI
@@ -58,10 +57,31 @@ http://127.0.0.1:8010/config
 
 Use the desktop shortcut named `Stop News Talent Monitor+` to stop the app.
 
-To remove the app, double-click:
+To remove the app:
+
+1. Open Windows Settings.
+2. Go to `Apps`.
+3. Uninstall `News Talent Monitor+`.
+
+## Build The Installer From Source
+
+Use this only if you are creating a release installer.
+
+Install these on the Windows build computer:
+
+- Python 3: `https://www.python.org/downloads/windows/`
+- Inno Setup 6: `https://jrsoftware.org/isdl.php`
+
+Then double-click:
 
 ```text
-Uninstall News Talent Monitor.bat
+Build Windows Installer.bat
 ```
 
-The uninstaller leaves user settings in `%APPDATA%\NewsTalentMonitorPlus` so they are not accidentally lost.
+The builder creates:
+
+```text
+dist\windows-installer\NewsTalentMonitorPlus-Setup.exe
+```
+
+The Windows user path is the installer EXE. This folder does not include a PowerShell installer.

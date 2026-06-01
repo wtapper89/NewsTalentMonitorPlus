@@ -22,11 +22,6 @@ rsync -a --delete \
 
 (
   cd "${BUILD_DIR}"
-  zip -qr "${DIST_DIR}/NewsTalentMonitorPlus-${VERSION}-windows.zip" NewsTalentMonitorPlus \
-    -x "NewsTalentMonitorPlus/installers/macos/*" \
-    -x "NewsTalentMonitorPlus/installers/raspberry-pi/*" \
-    -x "NewsTalentMonitorPlus/deploy/pi-image/*"
-
   zip -qr "${DIST_DIR}/NewsTalentMonitorPlus-${VERSION}-macos.zip" NewsTalentMonitorPlus \
     -x "NewsTalentMonitorPlus/installers/windows/*" \
     -x "NewsTalentMonitorPlus/installers/raspberry-pi/*" \
@@ -36,5 +31,4 @@ rsync -a --delete \
 rm -rf "${BUILD_DIR}"
 
 echo "Created:"
-echo "${DIST_DIR}/NewsTalentMonitorPlus-${VERSION}-windows.zip"
 echo "${DIST_DIR}/NewsTalentMonitorPlus-${VERSION}-macos.zip"

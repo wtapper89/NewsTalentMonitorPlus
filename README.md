@@ -9,7 +9,7 @@ News Talent Monitor+ turns a Raspberry Pi into a front-of-camera talent monitor 
 The easiest install path is now the normal program installer for your operating system:
 
 ```text
-Install on Windows.bat
+NewsTalentMonitorPlus-Setup.exe
 Install on macOS.command
 installers/windows/README.md
 installers/macos/README.md

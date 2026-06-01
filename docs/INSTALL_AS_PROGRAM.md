@@ -67,34 +67,35 @@ The installer:
 
 Current install path:
 
-1. Install Python 3 from:
+1. Download:
 
 ```text
-https://www.python.org/downloads/windows/
+NewsTalentMonitorPlus-Setup.exe
 ```
 
-2. Open:
-
-```text
-installers/windows
-```
-
-3. Double-click:
-
-```text
-Install News Talent Monitor.bat
-```
+2. Double-click it.
+3. Let it start News Talent Monitor+ and open the config page.
 
 The installer:
 
-- Copies the app to `%LOCALAPPDATA%\NewsTalentMonitorPlus`.
-- Creates the Python virtual environment.
-- Installs Python dependencies.
+- Installs the packaged `NewsTalentMonitor.exe`.
 - Creates desktop shortcuts for Display and Config.
-- Creates a Windows startup task so the app starts at login.
+- Adds News Talent Monitor+ to the current user's Windows Startup folder.
 - Checks for the NDI runtime.
 
-The app remains a source-based install for now. A future release can wrap this same flow in an Inno Setup, WiX, or MSIX installer.
+Users do not need to run PowerShell scripts.
+
+To build the installer from source on Windows, install Python 3 and Inno Setup 6, then run:
+
+```text
+installers\windows\Build Windows Installer.bat
+```
+
+That creates:
+
+```text
+dist\windows-installer\NewsTalentMonitorPlus-Setup.exe
+```
 
 ## macOS Install Direction
 
@@ -142,7 +143,7 @@ Exit codes:
 - `1`: runtime missing
 - `2`: runtime file found but could not be loaded
 
-## Build Shareable Installer Zips
+## Build Shareable macOS Zip
 
 From the repo root on macOS or Linux:
 
@@ -153,8 +154,13 @@ tools/build_installer_archives.sh 0.1.0
 That creates:
 
 ```text
-dist/NewsTalentMonitorPlus-0.1.0-windows.zip
 dist/NewsTalentMonitorPlus-0.1.0-macos.zip
 ```
 
-Those zip files contain the app source, the matching installer scripts, and the docs. They intentionally exclude git history, virtual environments, image-builder cache files, and generated build output.
+The macOS zip contains the app source, the macOS installer scripts, and the docs. It intentionally excludes git history, virtual environments, image-builder cache files, and generated build output.
+
+Windows releases should use the `.exe` installer created by:
+
+```text
+installers\windows\Build Windows Installer.bat
+```

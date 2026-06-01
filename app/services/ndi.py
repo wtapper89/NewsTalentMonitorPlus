@@ -366,9 +366,16 @@ class NDIBridge:
         self._worker_dir = worker_dir
         self._last_frame = None
         self._last_frame_mtime = 0.0
+        if getattr(sys, "frozen", False):
+            worker_command = [sys.executable, "--ndi-worker", source_name, str(worker_dir)]
+            worker_cwd = str(Path(sys.executable).resolve().parent)
+        else:
+            worker_command = [sys.executable, "-m", "app.services.ndi_worker", source_name, str(worker_dir)]
+            worker_cwd = str(Path(__file__).resolve().parents[2])
+
         self._process = subprocess.Popen(
-            [sys.executable, "-m", "app.services.ndi_worker", source_name, str(worker_dir)],
-            cwd=str(Path(__file__).resolve().parents[2]),
+            worker_command,
+            cwd=worker_cwd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             close_fds=True,

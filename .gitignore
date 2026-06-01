@@ -5,5 +5,6 @@ __pycache__/
 .pytest_cache/
 node_modules/
 dist/
+.installer-build/
 *.log
 .pi-image-build/
