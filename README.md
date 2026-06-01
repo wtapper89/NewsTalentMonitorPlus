@@ -23,6 +23,12 @@ That guide walks through:
 - setting up Shure mics
 - setting up the Windows photo server
 
+If you already installed Raspberry Pi OS with Desktop and want a click-to-install app-style setup, see:
+
+```text
+docs/INSTALL_AS_PROGRAM.md
+```
+
 ## What It Shows
 
 - Large return video from an NDI source
