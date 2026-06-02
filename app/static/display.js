@@ -15,6 +15,7 @@ let lastFontFamily = ''
 const loadedPhotoUrls = new Map()
 const missingPhotoSignatures = new Map()
 const MISSING_PHOTO_RETRY_MS = 60000
+const DISPLAY_STATE_REFRESH_MS = 500
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -205,8 +206,7 @@ function renderPreview(display) {
 
   if (previewMode === 'ndi') {
     if (sourceName) {
-      previewFrameEl.innerHTML = '<img id="ndiPreviewImage" alt="NDI preview feed" />'
-      startNdiPreview()
+      previewFrameEl.innerHTML = `<img id="ndiPreviewImage" src="/api/ndi/preview.mjpg?t=${Date.now()}" alt="NDI preview feed" />`
       return
     }
   }
@@ -329,7 +329,7 @@ async function start() {
     fetchState().catch((error) => {
       nowSourceEl.textContent = errorText(error)
     })
-  }, 2000)
+  }, DISPLAY_STATE_REFRESH_MS)
 }
 
 window.addEventListener('beforeunload', () => {

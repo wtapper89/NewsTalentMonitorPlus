@@ -30,7 +30,7 @@ class DashboardService:
         adapter,
         store: StateStore,
         source: str,
-        refresh_interval_seconds: int,
+        refresh_interval_seconds: float,
         mapping_store: MappingStore | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:

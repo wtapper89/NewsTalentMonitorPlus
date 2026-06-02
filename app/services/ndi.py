@@ -29,6 +29,7 @@ NDI_PREVIEW_MAX_WIDTH = 960
 NDI_PREVIEW_FPS = 30.0
 NDI_PREVIEW_JPEG_QUALITY = 64
 NDI_CAPTURE_TIMEOUT_MS = 1000
+NDI_MAX_DRAIN_FRAMES = 120
 NDI_STALE_RECONNECT_SECONDS = 10.0
 NDI_MAX_RAW_FRAME_BYTES = 48 * 1024 * 1024
 
@@ -245,6 +246,32 @@ class NDIReceiver:
         if not self.recv_instance:
             raise NDIUnavailableError("NDI receiver is not connected")
 
+        latest_video: NDIlibVideoFrameV2 | None = None
+        try:
+            for index in range(NDI_MAX_DRAIN_FRAMES):
+                frame_type, video, audio, metadata = self._capture_raw(timeout_ms if index == 0 else 0)
+                if frame_type == NDI_RECV_FRAME_TYPE_VIDEO:
+                    if latest_video is not None:
+                        self.ndi.lib.NDIlib_recv_free_video_v2(self.recv_instance, ctypes.byref(latest_video))
+                    latest_video = video
+                    continue
+                self._free_non_video_frame(frame_type, audio, metadata)
+                if latest_video is not None or frame_type == NDI_RECV_FRAME_TYPE_NONE:
+                    break
+
+            if latest_video is None:
+                return None, ""
+            return self._video_to_jpeg(latest_video), ""
+        except NDIUnavailableError as exc:
+            return None, str(exc)
+        finally:
+            if latest_video is not None:
+                self.ndi.lib.NDIlib_recv_free_video_v2(self.recv_instance, ctypes.byref(latest_video))
+
+    def _capture_raw(
+        self,
+        timeout_ms: int,
+    ) -> tuple[int, NDIlibVideoFrameV2, NDIlibAudioFrameV3, NDIlibMetadataFrame]:
         video = NDIlibVideoFrameV2()
         audio = NDIlibAudioFrameV3()
         metadata = NDIlibMetadataFrame()
@@ -255,20 +282,20 @@ class NDIReceiver:
             ctypes.byref(metadata),
             timeout_ms,
         )
+        return frame_type, video, audio, metadata
 
-        try:
-            if frame_type == NDI_RECV_FRAME_TYPE_VIDEO:
-                return self._video_to_jpeg(video), ""
-            return None, ""
-        except NDIUnavailableError as exc:
-            return None, str(exc)
-        finally:
-            if frame_type == NDI_RECV_FRAME_TYPE_VIDEO:
-                self.ndi.lib.NDIlib_recv_free_video_v2(self.recv_instance, ctypes.byref(video))
-            elif frame_type == NDI_RECV_FRAME_TYPE_AUDIO:
-                self.ndi.lib.NDIlib_recv_free_audio_v3(self.recv_instance, ctypes.byref(audio))
-            elif frame_type == NDI_RECV_FRAME_TYPE_METADATA:
-                self.ndi.lib.NDIlib_recv_free_metadata(self.recv_instance, ctypes.byref(metadata))
+    def _free_non_video_frame(
+        self,
+        frame_type: int,
+        audio: NDIlibAudioFrameV3,
+        metadata: NDIlibMetadataFrame,
+    ) -> None:
+        if not self.recv_instance:
+            return
+        if frame_type == NDI_RECV_FRAME_TYPE_AUDIO:
+            self.ndi.lib.NDIlib_recv_free_audio_v3(self.recv_instance, ctypes.byref(audio))
+        elif frame_type == NDI_RECV_FRAME_TYPE_METADATA:
+            self.ndi.lib.NDIlib_recv_free_metadata(self.recv_instance, ctypes.byref(metadata))
 
     def _find_source(self, timeout_ms: int) -> NDIlibSource:
         sources = discover_ndi_sources(self.ndi, timeout_ms=timeout_ms)

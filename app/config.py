@@ -18,7 +18,7 @@ class AppConfig:
     port: int
     reload: bool
     source: str
-    refresh_interval_seconds: int
+    refresh_interval_seconds: float
     data_file: Path
     mapping_file: Path
     log_level: str
@@ -38,7 +38,7 @@ def load_config() -> AppConfig:
     host = os.getenv("ANCHOR_MICS_HOST", "127.0.0.1").strip() or "127.0.0.1"
     port = int(os.getenv("ANCHOR_MICS_PORT", "8010"))
     reload = _as_bool(os.getenv("ANCHOR_MICS_RELOAD"), default=False)
-    refresh_interval_seconds = int(os.getenv("ANCHOR_MICS_REFRESH_SECONDS", "2"))
+    refresh_interval_seconds = float(os.getenv("ANCHOR_MICS_REFRESH_SECONDS", "0.5"))
     data_file = Path(os.getenv("ANCHOR_MICS_DATA_FILE", ROOT_DIR / "data" / "state.json")).expanduser()
     mapping_file = Path(
         os.getenv(
