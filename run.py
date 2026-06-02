@@ -1,8 +1,40 @@
 from __future__ import annotations
 
+import os
 import sys
+import threading
 
 from app.config import load_config
+
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w", encoding="utf-8")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w", encoding="utf-8")
+
+
+def run_server() -> int:
+    import uvicorn
+
+    config = load_config()
+    uvicorn.run(
+        "app.main:app",
+        host=config.host,
+        port=config.port,
+        reload=config.reload,
+        timeout_graceful_shutdown=2,
+    )
+    return 0
+
+
+def run_tray() -> int:
+    from app.windows_tray import WindowsTrayApp
+
+    config = load_config()
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+    WindowsTrayApp(config.host, config.port).run()
+    return 0
 
 
 def main() -> int:
@@ -17,17 +49,10 @@ def main() -> int:
 
         return check_ndi_main()
 
-    import uvicorn
+    if len(sys.argv) > 1 and sys.argv[1] == "--tray":
+        return run_tray()
 
-    config = load_config()
-    uvicorn.run(
-        "app.main:app",
-        host=config.host,
-        port=config.port,
-        reload=config.reload,
-        timeout_graceful_shutdown=2,
-    )
-    return 0
+    return run_server()
 
 
 if __name__ == "__main__":

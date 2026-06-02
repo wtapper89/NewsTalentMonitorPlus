@@ -11,6 +11,7 @@ from urllib.parse import quote, urljoin
 
 
 PHOTO_EXTENSIONS = (".png", ".jpg", ".jpeg")
+DEFAULT_CACHE_DIR = Path(tempfile.gettempdir()) / "anchor-mics-anchor-photos"
 
 
 def normalized_anchor_filename(name: str) -> str:
@@ -30,7 +31,7 @@ def parse_unc_path(path: str) -> tuple[str, str]:
 
 
 class AnchorPhotoResolver:
-    def __init__(self, cache_dir: Path | str = "/tmp/anchor-mics-anchor-photos") -> None:
+    def __init__(self, cache_dir: Path | str = DEFAULT_CACHE_DIR) -> None:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._seen: dict[str, tuple[float, Path | None]] = {}

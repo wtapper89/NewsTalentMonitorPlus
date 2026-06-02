@@ -13,4 +13,4 @@ set "ANCHOR_MICS_DATA_FILE=%APP_DATA%\state.json"
 set "ANCHOR_MICS_LOG_FILE=%APP_DATA%\news-talent-monitor.log"
 set "ANCHOR_MICS_NDI_WORK_DIR=%APP_TEMP%\ndi"
 
-start "News Talent Monitor+" /min "%APP_DIR%NewsTalentMonitor.exe"
+start "News Talent Monitor+" "%APP_DIR%NewsTalentMonitor.exe" --tray

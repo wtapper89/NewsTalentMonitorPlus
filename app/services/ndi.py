@@ -401,6 +401,8 @@ class NDIBridge:
             self._connection_status = "idle"
 
     def latest_frame(self) -> NDIFrame | None:
+        status = self._read_status()
+        process_running = self._process is not None and self._process.poll() is None
         frame_path = self._frame_path()
         if not frame_path:
             return self._last_frame
@@ -415,7 +417,6 @@ class NDIBridge:
         except OSError:
             return self._last_frame
 
-        status = self._read_status()
         frame = NDIFrame(
             jpeg=jpeg,
             source_name=self._source_name,
@@ -423,6 +424,10 @@ class NDIBridge:
             height=int(status.get("frame_height") or 0),
             captured_at=float(status.get("captured_at") or stat.st_mtime),
         )
+        if not process_running and time.time() - frame.captured_at > NDI_STALE_RECONNECT_SECONDS:
+            self._last_frame = None
+            self._last_frame_mtime = 0.0
+            return None
         self._last_frame = frame
         self._last_frame_mtime = stat.st_mtime
         return frame

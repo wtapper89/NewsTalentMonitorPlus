@@ -9,6 +9,7 @@ let clockHandle = null
 let ndiPreviewHandle = null
 let ndiPreviewAbort = null
 let ndiPreviewObjectUrl = ''
+let ndiLastFrameAt = 0
 let previewSignature = ''
 let lastFontFamily = ''
 const loadedPhotoUrls = new Map()
@@ -248,6 +249,7 @@ function stopNdiPreview() {
     URL.revokeObjectURL(ndiPreviewObjectUrl)
     ndiPreviewObjectUrl = ''
   }
+  ndiLastFrameAt = 0
 }
 
 function startNdiPreview() {
@@ -267,9 +269,12 @@ function startNdiPreview() {
         const previousUrl = ndiPreviewObjectUrl
         img.src = nextUrl
         ndiPreviewObjectUrl = nextUrl
+        ndiLastFrameAt = Date.now()
         if (previousUrl) {
           window.setTimeout(() => URL.revokeObjectURL(previousUrl), 1000)
         }
+      } else if (ndiLastFrameAt && Date.now() - ndiLastFrameAt > 5000) {
+        img.removeAttribute('src')
       }
     } catch (error) {
       if (error?.name !== 'AbortError') console.warn(errorText(error))

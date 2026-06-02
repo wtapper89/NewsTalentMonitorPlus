@@ -14,6 +14,7 @@ It does not include the NDI SDK or NDI runtime. The installer checks for NDI and
 2. Double-click it.
 3. Leave `Create desktop shortcuts` checked unless you do not want shortcuts.
 4. At the end, leave these checked:
+   - `Download and install the official NDI runtime`, if shown
    - `Check NDI runtime now`
    - `Start News Talent Monitor+ now`
    - `Open the config page`
@@ -26,12 +27,15 @@ The installer:
 - Creates desktop shortcuts for Display and Config.
 - Adds News Talent Monitor+ to the current user's Windows Startup folder.
 - Checks whether the NDI runtime is installed.
+- Offers to download and run the official NDI runtime installer if NDI is missing.
 
 ## NDI
 
 News Talent Monitor+ needs the official NDI runtime or SDK for native NDI video.
 
-Download it from:
+If NDI is missing, the installer can download and run the official NDI runtime installer from NDI's redistributable URL. You still complete the NDI installer prompts yourself so you can accept NDI's license.
+
+You can also download it manually from:
 
 ```text
 https://ndi.video/for-developers/ndi-sdk/download/
