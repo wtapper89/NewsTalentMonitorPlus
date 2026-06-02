@@ -177,7 +177,7 @@ def humanize_status(status: Any) -> str:
 QLXD_RECONNECT_DELAY_SECONDS = 2.0
 QLXD_READ_TIMEOUT_SECONDS = 0.5
 QLXD_SAMPLE_TIMEOUT_SECONDS = 5.0
-QLXD_QUERY_INTERVAL_SECONDS = 10.0
+QLXD_QUERY_INTERVAL_SECONDS = 2.0
 QLXD_BATTERY_STALE_SECONDS = 30 * 60
 QLXD_AUDIO_PEAK_SECONDS = 10.0
 QLXD_METER_RATE_MS = 100
@@ -280,6 +280,9 @@ class QlxdChannelState:
 
     def has_recent_battery(self, now: float) -> bool:
         return bool(self.battery_seen_at and (now - self.battery_seen_at) <= QLXD_BATTERY_STALE_SECONDS)
+
+    def has_current_battery(self) -> bool:
+        return 1 <= self.battery <= 5
 
     def has_recent_audio_peak(self, now: float) -> bool:
         return self.peak_at > 0 and (now - self.peak_at) <= QLXD_AUDIO_PEAK_SECONDS
@@ -1090,7 +1093,7 @@ class QlxdAdapter(ShureAdapter):
             errors.append("Receiver sample timeout")
 
         battery_percent = state.battery_percent()
-        if is_online and not state.has_recent_battery(now):
+        if is_online and not state.has_current_battery():
             is_online = False
             errors.append("Transmitter off or battery unavailable")
 
