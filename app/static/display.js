@@ -11,6 +11,9 @@ let ndiPreviewAbort = null
 let ndiPreviewObjectUrl = ''
 let previewSignature = ''
 let lastFontFamily = ''
+const loadedPhotoUrls = new Map()
+const missingPhotoSignatures = new Map()
+const MISSING_PHOTO_RETRY_MS = 60000
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -74,6 +77,20 @@ function photoDataAttributes(urls) {
   return escapeHtml(JSON.stringify(urls || []))
 }
 
+function photoSignature(urls) {
+  return JSON.stringify((urls || []).filter(Boolean))
+}
+
+function shouldSkipPhoto(signature) {
+  const failedAt = missingPhotoSignatures.get(signature)
+  if (!failedAt) return false
+  if (Date.now() - failedAt > MISSING_PHOTO_RETRY_MS) {
+    missingPhotoSignatures.delete(signature)
+    return false
+  }
+  return true
+}
+
 function nameFontSize(name) {
   const length = String(name || '').length
   if (length >= 24) return 'clamp(1rem, 1.2vw, 1.55rem)'
@@ -108,11 +125,15 @@ function renderMicTiles(mics) {
       const photoUrls = Array.isArray(mic.anchor_photo_urls) && mic.anchor_photo_urls.length
         ? mic.anchor_photo_urls.map(String)
         : [String(mic.anchor_photo_url || '')].filter(Boolean)
-      const photoUrl = photoUrls[0] || ''
+      const signature = photoSignature(photoUrls)
+      const skipPhoto = signature ? shouldSkipPhoto(signature) : true
+      const loadedPhotoUrl = signature ? loadedPhotoUrls.get(signature) || '' : ''
+      const photoUrl = loadedPhotoUrl || (!skipPhoto ? photoUrls[0] || '' : '')
+      const photoLoaded = Boolean(loadedPhotoUrl)
       const photoMarkup = photoUrl
-        ? `<img class="anchor-photo" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(title)}" data-photo-urls="${photoDataAttributes(photoUrls)}" data-photo-index="0" onerror="handleAnchorPhotoError(this);" />`
+        ? `<img class="anchor-photo ${photoLoaded ? '' : 'pending'}" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(title)}" data-photo-signature="${escapeHtml(signature)}" data-photo-urls="${photoDataAttributes(photoUrls)}" data-photo-index="0" onload="handleAnchorPhotoLoad(this);" onerror="handleAnchorPhotoError(this);" />`
         : ''
-      const personClass = photoUrl ? 'has-photo' : 'no-photo'
+      const personClass = photoLoaded ? 'has-photo' : 'no-photo'
       const fontSize = nameFontSize(title)
       const fontStyle = fontSize ? ` style="--name-font-size: ${escapeHtml(fontSize)}"` : ''
       return `
@@ -138,6 +159,17 @@ function renderMicTiles(mics) {
     .join('')
 }
 
+function handleAnchorPhotoLoad(img) {
+  const signature = img.dataset.photoSignature || ''
+  if (signature) {
+    loadedPhotoUrls.set(signature, img.currentSrc || img.src)
+    missingPhotoSignatures.delete(signature)
+  }
+  img.classList.remove('pending')
+  img.closest('.mic-tile')?.classList.remove('no-photo')
+  img.closest('.mic-tile')?.classList.add('has-photo')
+}
+
 function handleAnchorPhotoError(img) {
   const urls = JSON.parse(img.dataset.photoUrls || '[]')
   const nextIndex = Number(img.dataset.photoIndex || 0) + 1
@@ -146,11 +178,17 @@ function handleAnchorPhotoError(img) {
     img.src = urls[nextIndex]
     return
   }
-  img.closest('.mic-tile')?.classList.remove('has-photo')
+  const signature = img.dataset.photoSignature || photoSignature(urls)
+  if (signature) {
+    loadedPhotoUrls.delete(signature)
+    missingPhotoSignatures.set(signature, Date.now())
+  }
   img.closest('.mic-tile')?.classList.add('no-photo')
+  img.closest('.mic-tile')?.classList.remove('has-photo')
   img.remove()
 }
 
+window.handleAnchorPhotoLoad = handleAnchorPhotoLoad
 window.handleAnchorPhotoError = handleAnchorPhotoError
 
 function renderPreview(display) {
