@@ -23,6 +23,14 @@ DEFAULT_DISPLAY = {
     "preview_source_name": "",
     "preview_poster_url": "",
     "font_family": "Gotham, Montserrat, Arial, sans-serif",
+    "now_panel_enabled": True,
+    "now_panel_label": "Now",
+    "now_panel_border_color": "#1cff00",
+    "next_panel_enabled": True,
+    "next_panel_label": "Next",
+    "next_panel_border_color": "#fff200",
+    "status_sign_enabled": True,
+    "status_sign_custom_text": "",
 }
 
 DEFAULT_COMPANION = {
@@ -32,6 +40,7 @@ DEFAULT_COMPANION = {
     "variable_name": "",
     "on_air_source_variable_name": "",
     "next_source_variable_name": "",
+    "status_sign_variable_name": "",
 }
 
 DEFAULT_ANCHOR_PHOTOS = {
@@ -169,7 +178,55 @@ def _normalize_display(raw_display: dict | None) -> dict:
     display["preview_source_name"] = str(display.get("preview_source_name") or "").strip()
     display["preview_poster_url"] = str(display.get("preview_poster_url") or "").strip()
     display["font_family"] = str(display.get("font_family") or DEFAULT_DISPLAY["font_family"]).strip()
+    display["now_panel_enabled"] = _normalize_bool(
+        display.get("now_panel_enabled"),
+        DEFAULT_DISPLAY["now_panel_enabled"],
+    )
+    display["now_panel_label"] = str(display.get("now_panel_label") or DEFAULT_DISPLAY["now_panel_label"]).strip()
+    display["now_panel_border_color"] = _normalize_hex_color(
+        display.get("now_panel_border_color"),
+        DEFAULT_DISPLAY["now_panel_border_color"],
+    )
+    display["next_panel_enabled"] = _normalize_bool(
+        display.get("next_panel_enabled"),
+        DEFAULT_DISPLAY["next_panel_enabled"],
+    )
+    display["next_panel_label"] = str(display.get("next_panel_label") or DEFAULT_DISPLAY["next_panel_label"]).strip()
+    display["next_panel_border_color"] = _normalize_hex_color(
+        display.get("next_panel_border_color"),
+        DEFAULT_DISPLAY["next_panel_border_color"],
+    )
+    display["status_sign_enabled"] = _normalize_bool(
+        display.get("status_sign_enabled"),
+        DEFAULT_DISPLAY["status_sign_enabled"],
+    )
+    display["status_sign_custom_text"] = str(display.get("status_sign_custom_text") or "").strip()
     return display
+
+
+def _normalize_hex_color(value: object, fallback: str) -> str:
+    candidate = str(value or "").strip()
+    if len(candidate) == 7 and candidate.startswith("#"):
+        try:
+            int(candidate[1:], 16)
+            return candidate.lower()
+        except ValueError:
+            pass
+    return fallback
+
+
+def _normalize_bool(value: object, fallback: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return fallback
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off"}:
+            return False
+    return bool(value)
 
 
 def _normalize_companion(raw_companion: dict | None) -> dict:
@@ -180,6 +237,7 @@ def _normalize_companion(raw_companion: dict | None) -> dict:
     companion["variable_name"] = str(companion.get("variable_name") or "").strip()
     companion["on_air_source_variable_name"] = str(companion.get("on_air_source_variable_name") or "").strip()
     companion["next_source_variable_name"] = str(companion.get("next_source_variable_name") or "").strip()
+    companion["status_sign_variable_name"] = str(companion.get("status_sign_variable_name") or "").strip()
     return companion
 
 

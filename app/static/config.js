@@ -47,6 +47,11 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;')
 }
 
+function normalizeHexColor(value, fallback) {
+  const candidate = String(value || '').trim()
+  return /^#[0-9a-fA-F]{6}$/.test(candidate) ? candidate : fallback
+}
+
 function saveStatus(message, status = '') {
   saveStatusEl.textContent = message
   saveStatusEl.className = `save-status ${status}`.trim()
@@ -136,6 +141,47 @@ function buildGlobalFields() {
           ${fieldLabel('Font family', 'Fonts Chromium should try for the kiosk display. The font must be installed on the Pi.')}
           <input type="text" value="${escapeHtml(display.font_family ?? 'Gotham, Montserrat, Arial, sans-serif')}" data-global-field="display.font_family" />
         </label>
+        <label class="stack">
+          ${fieldLabel('Show Now box', 'Hide this if you do not want the green PGM/Now panel in the top bar.')}
+          <select data-global-field="display.now_panel_enabled">
+            <option value="true" ${display.now_panel_enabled !== false ? 'selected' : ''}>true</option>
+            <option value="false" ${display.now_panel_enabled === false ? 'selected' : ''}>false</option>
+          </select>
+        </label>
+        <label class="stack">
+          ${fieldLabel('Now label', 'The label shown at the left side of the PGM/Now box.')}
+          <input type="text" value="${escapeHtml(display.now_panel_label ?? 'Now')}" data-global-field="display.now_panel_label" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Now border color', 'Border and label color for the PGM/Now box.')}
+          <input type="color" value="${escapeHtml(normalizeHexColor(display.now_panel_border_color, '#1cff00'))}" data-global-field="display.now_panel_border_color" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Show Next box', 'Hide this if you do not want the yellow PVW/Next panel in the top bar.')}
+          <select data-global-field="display.next_panel_enabled">
+            <option value="true" ${display.next_panel_enabled !== false ? 'selected' : ''}>true</option>
+            <option value="false" ${display.next_panel_enabled === false ? 'selected' : ''}>false</option>
+          </select>
+        </label>
+        <label class="stack">
+          ${fieldLabel('Next label', 'The label shown at the left side of the PVW/Next box.')}
+          <input type="text" value="${escapeHtml(display.next_panel_label ?? 'Next')}" data-global-field="display.next_panel_label" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Next border color', 'Border and label color for the PVW/Next box.')}
+          <input type="color" value="${escapeHtml(normalizeHexColor(display.next_panel_border_color, '#fff200'))}" data-global-field="display.next_panel_border_color" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Show status sign', 'Shows a neon ON AIR, RECORDING, or custom text sign in the blank space to the right of the preview video.')}
+          <select data-global-field="display.status_sign_enabled">
+            <option value="true" ${display.status_sign_enabled !== false ? 'selected' : ''}>true</option>
+            <option value="false" ${display.status_sign_enabled === false ? 'selected' : ''}>false</option>
+          </select>
+        </label>
+        <label class="stack">
+          ${fieldLabel('Fallback status text', 'Used when the status sign variable is blank. Any custom value becomes neon text.')}
+          <input type="text" value="${escapeHtml(display.status_sign_custom_text ?? '')}" data-global-field="display.status_sign_custom_text" placeholder="STANDBY" />
+        </label>
       </div>
       <div class="ndi-panel">
         <div class="ndi-panel-head">
@@ -204,6 +250,10 @@ function buildGlobalFields() {
         <label class="stack">
           ${fieldLabel('PVW / Next source variable', 'Variable shown in the yellow Next box. Enter the vMix preview variable name here.')}
           <input type="text" value="${escapeHtml(companion.next_source_variable_name ?? '')}" data-global-field="companion.next_source_variable_name" placeholder="NextSource" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Status sign variable', 'Variable for the right-side neon sign. Values like On Air, ON_AIR, Recording, or REC use the built-in graphics; any other value displays as custom neon text.')}
+          <input type="text" value="${escapeHtml(companion.status_sign_variable_name ?? '')}" data-global-field="companion.status_sign_variable_name" placeholder="ProductionStatus" />
         </label>
       </div>
     </article>
@@ -451,6 +501,14 @@ function normalizeForSave() {
       preview_source_name: String(configState.display.preview_source_name || '').trim(),
       preview_poster_url: String(configState.display.preview_poster_url || '').trim(),
       font_family: String(configState.display.font_family || 'Gotham, Montserrat, Arial, sans-serif').trim(),
+      now_panel_enabled: configState.display.now_panel_enabled !== false,
+      now_panel_label: String(configState.display.now_panel_label || 'Now').trim() || 'Now',
+      now_panel_border_color: normalizeHexColor(configState.display.now_panel_border_color, '#1cff00'),
+      next_panel_enabled: configState.display.next_panel_enabled !== false,
+      next_panel_label: String(configState.display.next_panel_label || 'Next').trim() || 'Next',
+      next_panel_border_color: normalizeHexColor(configState.display.next_panel_border_color, '#fff200'),
+      status_sign_enabled: configState.display.status_sign_enabled !== false,
+      status_sign_custom_text: String(configState.display.status_sign_custom_text || '').trim(),
     },
     companion: {
       enabled: Boolean(configState.companion.enabled),
@@ -459,6 +517,7 @@ function normalizeForSave() {
       variable_name: String(configState.companion.variable_name || '').trim(),
       on_air_source_variable_name: String(configState.companion.on_air_source_variable_name || '').trim(),
       next_source_variable_name: String(configState.companion.next_source_variable_name || '').trim(),
+      status_sign_variable_name: String(configState.companion.status_sign_variable_name || '').trim(),
     },
     anchor_photos: {
       enabled: Boolean(configState.anchor_photos.enabled),

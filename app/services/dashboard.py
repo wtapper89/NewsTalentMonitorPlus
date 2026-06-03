@@ -260,6 +260,17 @@ class DashboardService:
             "preview_source_name": DEFAULT_DISPLAY["preview_source_name"],
             "preview_poster_url": DEFAULT_DISPLAY["preview_poster_url"],
             "font_family": DEFAULT_DISPLAY["font_family"],
+            "now_panel_enabled": DEFAULT_DISPLAY["now_panel_enabled"],
+            "now_panel_label": DEFAULT_DISPLAY["now_panel_label"],
+            "now_panel_border_color": DEFAULT_DISPLAY["now_panel_border_color"],
+            "next_panel_enabled": DEFAULT_DISPLAY["next_panel_enabled"],
+            "next_panel_label": DEFAULT_DISPLAY["next_panel_label"],
+            "next_panel_border_color": DEFAULT_DISPLAY["next_panel_border_color"],
+            "status_sign_enabled": DEFAULT_DISPLAY["status_sign_enabled"],
+            "status_sign_custom_text": DEFAULT_DISPLAY["status_sign_custom_text"],
+            "status_sign_text": "",
+            "status_sign_mode": "empty",
+            "status_sign_error": "",
             "companion_enabled": DEFAULT_COMPANION["enabled"],
             "companion_base_url": DEFAULT_COMPANION["base_url"],
             "companion_connection_label": DEFAULT_COMPANION["connection_label"],
@@ -268,6 +279,7 @@ class DashboardService:
             "on_air_source_variable_name": DEFAULT_COMPANION["on_air_source_variable_name"],
             "next_source_name": "",
             "next_source_variable_name": DEFAULT_COMPANION["next_source_variable_name"],
+            "status_sign_variable_name": DEFAULT_COMPANION["status_sign_variable_name"],
             "anchor_photos_enabled": DEFAULT_ANCHOR_PHOTOS["enabled"],
             "anchor_photos_base_url": DEFAULT_ANCHOR_PHOTOS["base_url"],
             "anchor_photos_share_path": DEFAULT_ANCHOR_PHOTOS["share_path"],
@@ -289,6 +301,8 @@ class DashboardService:
         on_air_source_error = ""
         next_source_name = ""
         next_source_error = ""
+        status_sign_variable_value = ""
+        status_sign_error = ""
 
         if (
             str(display.get("show_title_mode") or "manual").lower() == "companion"
@@ -357,6 +371,31 @@ class DashboardService:
                 next_source_name = str(self._display_context.get("next_source_name") or "")
                 next_source_error = str(exc)
 
+        if (
+            companion.get("enabled")
+            and str(companion.get("base_url") or "").strip()
+            and str(companion.get("connection_label") or "").strip()
+            and str(companion.get("status_sign_variable_name") or "").strip()
+        ):
+            try:
+                status_connection_label, status_variable_name = self._companion_lookup_parts(
+                    companion,
+                    str(companion["status_sign_variable_name"]),
+                )
+                status_sign_variable_value = await self._fetch_companion_variable(
+                    str(companion["base_url"]),
+                    status_connection_label,
+                    status_variable_name,
+                )
+            except Exception as exc:
+                status_sign_variable_value = str(self._display_context.get("status_sign_text") or "")
+                status_sign_error = str(exc)
+
+        status_sign = self._status_sign_payload(
+            status_sign_variable_value,
+            str(display.get("status_sign_custom_text") or ""),
+        )
+
         return {
             "show_title": show_title or manual_title,
             "show_title_source": show_title_source,
@@ -368,6 +407,21 @@ class DashboardService:
             "preview_source_name": str(display.get("preview_source_name") or ""),
             "preview_poster_url": str(display.get("preview_poster_url") or ""),
             "font_family": str(display.get("font_family") or DEFAULT_DISPLAY["font_family"]),
+            "now_panel_enabled": bool(display.get("now_panel_enabled", DEFAULT_DISPLAY["now_panel_enabled"])),
+            "now_panel_label": str(display.get("now_panel_label") or DEFAULT_DISPLAY["now_panel_label"]),
+            "now_panel_border_color": str(
+                display.get("now_panel_border_color") or DEFAULT_DISPLAY["now_panel_border_color"]
+            ),
+            "next_panel_enabled": bool(display.get("next_panel_enabled", DEFAULT_DISPLAY["next_panel_enabled"])),
+            "next_panel_label": str(display.get("next_panel_label") or DEFAULT_DISPLAY["next_panel_label"]),
+            "next_panel_border_color": str(
+                display.get("next_panel_border_color") or DEFAULT_DISPLAY["next_panel_border_color"]
+            ),
+            "status_sign_enabled": bool(display.get("status_sign_enabled", DEFAULT_DISPLAY["status_sign_enabled"])),
+            "status_sign_custom_text": str(display.get("status_sign_custom_text") or ""),
+            "status_sign_text": status_sign["text"],
+            "status_sign_mode": status_sign["mode"],
+            "status_sign_error": status_sign_error,
             "companion_enabled": bool(companion.get("enabled")),
             "companion_base_url": str(companion.get("base_url") or DEFAULT_COMPANION["base_url"]),
             "companion_connection_label": str(companion.get("connection_label") or DEFAULT_COMPANION["connection_label"]),
@@ -378,6 +432,7 @@ class DashboardService:
             "next_source_name": next_source_name,
             "next_source_error": next_source_error,
             "next_source_variable_name": str(companion.get("next_source_variable_name") or ""),
+            "status_sign_variable_name": str(companion.get("status_sign_variable_name") or ""),
             "anchor_photos_enabled": bool((mapping.get("anchor_photos") or {}).get("enabled")),
             "anchor_photos_base_url": str((mapping.get("anchor_photos") or {}).get("base_url") or ""),
             "anchor_photos_share_path": str((mapping.get("anchor_photos") or {}).get("share_path") or ""),
@@ -408,6 +463,19 @@ class DashboardService:
         if prefixed:
             return prefixed.group(1).strip(), prefixed.group(2).strip()
         return str(companion.get("connection_label") or "").strip(), raw_variable
+
+    @staticmethod
+    def _status_sign_payload(variable_value: str, fallback_text: str) -> dict[str, str]:
+        raw_text = str(variable_value or fallback_text or "").strip()
+        if not raw_text:
+            return {"text": "", "mode": "empty"}
+
+        normalized = re.sub(r"[^a-z0-9]+", "", raw_text.lower())
+        if normalized in {"onair", "air", "live"}:
+            return {"text": "ON AIR", "mode": "on-air"}
+        if normalized in {"recording", "record", "rec"}:
+            return {"text": "RECORDING", "mode": "recording"}
+        return {"text": raw_text, "mode": "custom"}
 
     async def _fetch_companion_variable(self, base_url: str, connection_label: str, variable_name: str) -> str:
         url = (

@@ -478,6 +478,11 @@ input {
   font: inherit;
 }
 
+input[type="color"] {
+  min-height: 46px;
+  padding: 5px;
+}
+
 select,
 textarea {
   width: 100%;

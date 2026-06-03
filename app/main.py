@@ -114,6 +114,14 @@ class DisplayConfigRequest(BaseModel):
     preview_source_name: str = Field(default="", max_length=255)
     preview_poster_url: str = Field(default="", max_length=1024)
     font_family: str = Field(default="Gotham, Montserrat, Arial, sans-serif", max_length=255)
+    now_panel_enabled: bool = Field(default=True)
+    now_panel_label: str = Field(default="Now", max_length=32)
+    now_panel_border_color: str = Field(default="#1cff00", max_length=16)
+    next_panel_enabled: bool = Field(default=True)
+    next_panel_label: str = Field(default="Next", max_length=32)
+    next_panel_border_color: str = Field(default="#fff200", max_length=16)
+    status_sign_enabled: bool = Field(default=True)
+    status_sign_custom_text: str = Field(default="", max_length=64)
 
 
 class CompanionConfigRequest(BaseModel):
@@ -123,6 +131,7 @@ class CompanionConfigRequest(BaseModel):
     variable_name: str = Field(default="", max_length=128)
     on_air_source_variable_name: str = Field(default="", max_length=128)
     next_source_variable_name: str = Field(default="", max_length=128)
+    status_sign_variable_name: str = Field(default="", max_length=128)
 
 
 class AnchorPhotosConfigRequest(BaseModel):

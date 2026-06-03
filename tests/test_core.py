@@ -78,13 +78,18 @@ class MappingStoreTests(unittest.TestCase):
                     "manual_show_title": "TVC NEWS",
                     "preview_mode": "ndi",
                     "preview_url": "http://127.0.0.1:9000/preview",
-                    "font_family": "Gotham"
+                    "font_family": "Gotham",
+                    "now_panel_label": "Live",
+                    "now_panel_border_color": "#00ff88",
+                    "next_panel_enabled": false,
+                    "status_sign_custom_text": "Standby"
                   },
                   "companion": {
                     "enabled": true,
                     "base_url": "http://127.0.0.1:8000/",
                     "connection_label": "Cuez",
-                    "variable_name": "segment_title"
+                    "variable_name": "segment_title",
+                    "status_sign_variable_name": "ProductionStatus"
                   }
                 }
                 """.strip(),
@@ -96,9 +101,14 @@ class MappingStoreTests(unittest.TestCase):
             self.assertEqual(mapping["display"]["show_title_mode"], "companion")
             self.assertEqual(mapping["display"]["preview_mode"], "ndi")
             self.assertEqual(mapping["display"]["font_family"], "Gotham")
+            self.assertEqual(mapping["display"]["now_panel_label"], "Live")
+            self.assertEqual(mapping["display"]["now_panel_border_color"], "#00ff88")
+            self.assertFalse(mapping["display"]["next_panel_enabled"])
+            self.assertEqual(mapping["display"]["status_sign_custom_text"], "Standby")
             self.assertTrue(mapping["companion"]["enabled"])
             self.assertEqual(mapping["companion"]["base_url"], "http://127.0.0.1:8000")
             self.assertEqual(mapping["companion"]["variable_name"], "segment_title")
+            self.assertEqual(mapping["companion"]["status_sign_variable_name"], "ProductionStatus")
 
     def test_mapping_store_normalizes_anchor_photos_and_assignment_variables(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -247,6 +257,7 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
             values = {
                 "http://127.0.0.1:8000/api/variable/custom/OnAir/value": "Studio Camera 2",
                 "http://127.0.0.1:8000/api/variable/custom/NextUp/value": "Weather Center",
+                "http://127.0.0.1:8000/api/variable/custom/ProductionStatus/value": "On Air",
             }
             self.assertIn(str(request.url), values)
             return httpx.Response(200, json=values[str(request.url)])
@@ -261,6 +272,7 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
                         "connection_label": "custom",
                         "on_air_source_variable_name": "OnAir",
                         "next_source_variable_name": "NextUp",
+                        "status_sign_variable_name": "ProductionStatus",
                     },
                 }
             )
@@ -280,6 +292,8 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(state["display"]["on_air_source_name"], "Studio Camera 2")
         self.assertEqual(state["display"]["next_source_name"], "Weather Center")
+        self.assertEqual(state["display"]["status_sign_text"], "ON AIR")
+        self.assertEqual(state["display"]["status_sign_mode"], "on-air")
 
     async def test_companion_variable_can_drive_mic_assignment(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:

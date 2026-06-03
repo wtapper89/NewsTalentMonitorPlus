@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>News Talent Monitor+ Display</title>
-    <link rel="stylesheet" href="/static/display.css?v=20260529-now-next" />
+    <link rel="stylesheet" href="/static/display.css?v=20260603-status-sign" />
   </head>
   <body>
     <main class="display-shell">
@@ -18,12 +18,12 @@
           <span class="clock-time" id="clockTime">--:--:-- --</span>
         </div>
         <div class="source-board" aria-label="Current rundown sources">
-          <section class="source-panel source-panel-now">
-            <span class="source-label">Now</span>
+          <section class="source-panel source-panel-now" id="nowPanel">
+            <span class="source-label" id="nowLabel">Now</span>
             <span class="source-name" id="nowSource">---</span>
           </section>
-          <section class="source-panel source-panel-next">
-            <span class="source-label">Next</span>
+          <section class="source-panel source-panel-next" id="nextPanel">
+            <span class="source-label" id="nextLabel">Next</span>
             <span class="source-name" id="nextSource">---</span>
           </section>
         </div>
@@ -31,11 +31,12 @@
 
       <section class="preview-shell">
         <div class="preview-frame" id="previewFrame"></div>
+        <aside class="status-sign status-sign-empty" id="statusSign" aria-live="polite" aria-label="Production status"></aside>
       </section>
 
       <section class="mic-strip" id="micStrip"></section>
     </main>
 
-    <script src="/static/display.js?v=20260529-now-next" defer></script>
+    <script src="/static/display.js?v=20260603-status-sign" defer></script>
   </body>
 </html>

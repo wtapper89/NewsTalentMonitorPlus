@@ -1,7 +1,13 @@
 const clockTimeEl = document.getElementById('clockTime')
+const sourceBoardEl = document.querySelector('.source-board')
+const nowPanelEl = document.getElementById('nowPanel')
+const nowLabelEl = document.getElementById('nowLabel')
 const nowSourceEl = document.getElementById('nowSource')
+const nextPanelEl = document.getElementById('nextPanel')
+const nextLabelEl = document.getElementById('nextLabel')
 const nextSourceEl = document.getElementById('nextSource')
 const previewFrameEl = document.getElementById('previewFrame')
+const statusSignEl = document.getElementById('statusSign')
 const micStripEl = document.getElementById('micStrip')
 
 let refreshHandle = null
@@ -25,10 +31,22 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;')
 }
 
+function normalizeHexColor(value, fallback) {
+  const candidate = String(value || '').trim()
+  return /^#[0-9a-fA-F]{6}$/.test(candidate) ? candidate : fallback
+}
+
 function titleCaseFallback(value) {
   return String(value || '')
     .toLowerCase()
     .replace(/\b\w/g, (match) => match.toUpperCase())
+}
+
+function statusSignFontSize(text) {
+  const length = String(text || '').trim().length
+  if (length >= 18) return 'clamp(0.72rem, 1vw, 1.2rem)'
+  if (length >= 12) return 'clamp(0.82rem, 1.25vw, 1.55rem)'
+  return ''
 }
 
 function errorText(error) {
@@ -161,6 +179,64 @@ function renderMicTiles(mics) {
     .join('')
 }
 
+function renderSourcePanels(display) {
+  const nowEnabled = display.now_panel_enabled !== false
+  const nextEnabled = display.next_panel_enabled !== false
+  const nowColor = normalizeHexColor(display.now_panel_border_color, '#1cff00')
+  const nextColor = normalizeHexColor(display.next_panel_border_color, '#fff200')
+
+  nowPanelEl?.classList.toggle('is-hidden', !nowEnabled)
+  nextPanelEl?.classList.toggle('is-hidden', !nextEnabled)
+  sourceBoardEl?.classList.toggle('is-empty', !nowEnabled && !nextEnabled)
+
+  if (nowPanelEl) nowPanelEl.style.setProperty('--source-border', nowColor)
+  if (nextPanelEl) nextPanelEl.style.setProperty('--source-border', nextColor)
+  if (nowLabelEl) nowLabelEl.textContent = String(display.now_panel_label || 'Now').trim() || 'Now'
+  if (nextLabelEl) nextLabelEl.textContent = String(display.next_panel_label || 'Next').trim() || 'Next'
+
+  nowSourceEl.textContent = String(display.on_air_source_name || '').trim().toUpperCase() || '---'
+  nextSourceEl.textContent = String(display.next_source_name || '').trim().toUpperCase() || '---'
+}
+
+function renderStatusSign(display) {
+  if (!statusSignEl) return
+  const enabled = display.status_sign_enabled !== false
+  const mode = String(display.status_sign_mode || 'empty').trim()
+  const text = String(display.status_sign_text || '').trim()
+  statusSignEl.className = 'status-sign'
+
+  if (!enabled || !text || mode === 'empty') {
+    statusSignEl.classList.add('status-sign-empty')
+    statusSignEl.innerHTML = ''
+    return
+  }
+
+  if (mode === 'on-air') {
+    statusSignEl.classList.add('status-sign-on-air')
+    statusSignEl.innerHTML = '<img class="status-sign-image" src="/static/assets/neon-on-air.svg" alt="ON AIR" />'
+    return
+  }
+
+  if (mode === 'recording') {
+    statusSignEl.classList.add('status-sign-recording')
+    statusSignEl.innerHTML = '<img class="status-sign-image" src="/static/assets/neon-recording.svg" alt="RECORDING" />'
+    return
+  }
+
+  const fontSize = statusSignFontSize(text)
+  if (fontSize) {
+    statusSignEl.style.setProperty('--status-sign-font-size', fontSize)
+  } else {
+    statusSignEl.style.removeProperty('--status-sign-font-size')
+  }
+  statusSignEl.classList.add('status-sign-custom')
+  statusSignEl.innerHTML = `
+    <div class="status-neon-custom">
+      <span class="status-neon-text">${escapeHtml(text)}</span>
+    </div>
+  `
+}
+
 function handleAnchorPhotoLoad(img) {
   const signature = img.dataset.photoSignature || ''
   if (signature) {
@@ -291,8 +367,8 @@ function startNdiPreview() {
 
 function renderState(state) {
   const display = state.display || {}
-  nowSourceEl.textContent = String(display.on_air_source_name || '').trim().toUpperCase() || '---'
-  nextSourceEl.textContent = String(display.next_source_name || '').trim().toUpperCase() || '---'
+  renderSourcePanels(display)
+  renderStatusSign(display)
   renderPreview(display)
   renderMicTiles(state.mics || [])
 
