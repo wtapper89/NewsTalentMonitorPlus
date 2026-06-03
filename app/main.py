@@ -14,6 +14,7 @@ from app.logs import configure_logging, recent_logs
 from app.services.dashboard import DashboardService
 from app.services.ndi import NDIBridge
 from app.services.photos import AnchorPhotoResolver
+from app.services.room_sign import RoomSignService
 from app.services.shure import MicboardAdapter, MockShureAdapter, QlxdAdapter, SystemApiAdapter
 from app.store import DEFAULT_FIELDS, MappingStore, StateStore
 
@@ -42,6 +43,7 @@ async def lifespan(app: FastAPI):
     )
     ndi_bridge = NDIBridge()
     photo_resolver = AnchorPhotoResolver()
+    room_sign_service = RoomSignService(mapping_store)
 
     stop_event = asyncio.Event()
 
@@ -60,6 +62,7 @@ async def lifespan(app: FastAPI):
     app.state.runtime_config = config
     app.state.ndi_bridge = ndi_bridge
     app.state.photo_resolver = photo_resolver
+    app.state.room_sign_service = room_sign_service
 
     try:
         yield
@@ -71,6 +74,7 @@ async def lifespan(app: FastAPI):
         except asyncio.CancelledError:
             pass
         ndi_bridge.stop()
+        await room_sign_service.close()
         await service.close()
 
 
@@ -144,6 +148,18 @@ class AnchorPhotosConfigRequest(BaseModel):
     timeout_seconds: int = Field(default=4, ge=1, le=30)
 
 
+class RoomSignConfigRequest(BaseModel):
+    enabled: bool = Field(default=False)
+    room_name: str = Field(default="Studio", max_length=128)
+    room_id: str = Field(default="", max_length=64)
+    feed_url: str = Field(default="", max_length=2048)
+    calendar_web_name: str = Field(default="", max_length=255)
+    timezone: str = Field(default="America/New_York", max_length=128)
+    lookahead_days: int = Field(default=7, ge=1, le=31)
+    max_events: int = Field(default=6, ge=1, le=20)
+    refresh_seconds: int = Field(default=60, ge=15, le=3600)
+
+
 class MicConnectionRequest(BaseModel):
     id: str = Field(min_length=1, max_length=64)
     default_name: str = Field(min_length=1, max_length=64)
@@ -168,6 +184,7 @@ class ConfigUpdateRequest(BaseModel):
     display: DisplayConfigRequest = Field(default_factory=DisplayConfigRequest)
     companion: CompanionConfigRequest = Field(default_factory=CompanionConfigRequest)
     anchor_photos: AnchorPhotosConfigRequest = Field(default_factory=AnchorPhotosConfigRequest)
+    room_sign: RoomSignConfigRequest = Field(default_factory=RoomSignConfigRequest)
     auth: AuthConfigRequest = Field(default_factory=AuthConfigRequest)
     default_connection: DefaultConnectionRequest = Field(default_factory=DefaultConnectionRequest)
     mics: list[MicConnectionRequest] = Field(default_factory=list)
@@ -197,6 +214,10 @@ def photo_resolver_from(request: Request) -> AnchorPhotoResolver:
     return request.app.state.photo_resolver
 
 
+def room_sign_service_from(request: Request) -> RoomSignService:
+    return request.app.state.room_sign_service
+
+
 def build_config_response(request: Request) -> dict:
     mapping = mapping_store_from(request).load()
     runtime_config = runtime_config_from(request)
@@ -213,6 +234,7 @@ def build_config_response(request: Request) -> dict:
         "display": mapping.get("display", {}),
         "companion": mapping.get("companion", {}),
         "anchor_photos": mapping.get("anchor_photos", {}),
+        "room_sign": mapping.get("room_sign", {}),
         "default_connection": mapping.get("default_connection", {}),
         "auth": mapping.get("auth", {}),
         "mics": mics,
@@ -237,6 +259,11 @@ async def display_page() -> FileResponse:
 @app.get("/config")
 async def config_page() -> FileResponse:
     return FileResponse(Path(ROOT_DIR / "app" / "static" / "config.html"))
+
+
+@app.get("/room-sign")
+async def room_sign_page() -> FileResponse:
+    return FileResponse(Path(ROOT_DIR / "app" / "static" / "room-sign.html"))
 
 
 @app.get("/health")
@@ -290,6 +317,12 @@ async def update_assignment(mic_id: str, payload: AssignmentRequest, request: Re
 @app.get("/api/companion/state")
 async def get_companion_state(request: Request) -> dict:
     return await service_from(request).companion_state()
+
+
+@app.get("/api/room-sign/state")
+async def get_room_sign_state(request: Request) -> dict:
+    state = await service_from(request).get_state()
+    return await room_sign_service_from(request).state(state.get("display", {}))
 
 
 @app.get("/api/ndi/status")

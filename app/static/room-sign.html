@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>News Talent Monitor+ Room Sign</title>
+    <link rel="stylesheet" href="/static/room-sign.css?v=20260603-room-sign" />
+  </head>
+  <body>
+    <main class="room-sign-shell">
+      <section class="status-view" id="statusView" aria-live="polite">
+        <div class="status-word" id="statusText">ON AIR</div>
+        <footer class="event-footer">
+          <div class="event-title" id="currentEventTitle">---</div>
+          <div class="event-meta" id="currentEventMeta">---</div>
+        </footer>
+      </section>
+
+      <section class="schedule-view" id="scheduleView">
+        <header class="schedule-header">
+          <div>
+            <p class="schedule-kicker">Upcoming This Week</p>
+            <h1 id="scheduleRoomName">Studio</h1>
+          </div>
+          <time id="clockText">--:-- --</time>
+        </header>
+        <div class="event-list" id="eventList"></div>
+        <div class="room-fallback" id="roomFallback"></div>
+        <div class="schedule-error" id="scheduleError"></div>
+      </section>
+    </main>
+
+    <script src="/static/room-sign.js?v=20260603-room-sign" defer></script>
+  </body>
+</html>

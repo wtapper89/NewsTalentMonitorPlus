@@ -23,6 +23,7 @@ let configState = {
   display: {},
   companion: {},
   anchor_photos: {},
+  room_sign: {},
   auth: {},
   default_connection: {},
   mics: [],
@@ -33,6 +34,7 @@ let activeConfigTab = 'display'
 
 const CONFIG_TABS = [
   ['display', 'Display'],
+  ['room-sign', 'Room Sign'],
   ['companion', 'Companion'],
   ['photos', 'Photos'],
   ['receivers', 'Receivers'],
@@ -88,6 +90,7 @@ function buildGlobalFields() {
   const display = configState.display || {}
   const companion = configState.companion || {}
   const anchorPhotos = configState.anchor_photos || {}
+  const roomSign = configState.room_sign || {}
 
   globalConfigEl.innerHTML = `
     ${renderTabs()}
@@ -211,6 +214,58 @@ function buildGlobalFields() {
         <div class="ndi-status">
           ${renderNdiStatus(display)}
         </div>
+      </div>
+    </article>
+    `)}
+
+    ${tabPanel('room-sign', `
+    <article class="config-card">
+      <div class="config-card-head">
+        <div>
+          <h3>Room sign</h3>
+          <p>Separate 1920x720 on-air sign and 25Live schedule view.</p>
+        </div>
+      </div>
+      <div class="config-card-grid">
+        <label class="stack">
+          ${fieldLabel('Enable room sign', 'Turn this on to allow the room sign page to fetch and display 25Live room events.')}
+          <select data-global-field="room_sign.enabled">
+            <option value="true" ${roomSign.enabled ? 'selected' : ''}>true</option>
+            <option value="false" ${!roomSign.enabled ? 'selected' : ''}>false</option>
+          </select>
+        </label>
+        <label class="stack">
+          ${fieldLabel('Fallback room name', 'Shown when the room is not on air and there are no upcoming events to list.')}
+          <input type="text" value="${escapeHtml(roomSign.room_name ?? 'Studio')}" data-global-field="room_sign.room_name" placeholder="COM 251 - John Williams Studio" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('25Live room ID', 'The 25Live space_id for this room. For your John Williams Studio example, use 1536.')}
+          <input type="text" value="${escapeHtml(roomSign.room_id ?? '')}" data-global-field="room_sign.room_id" placeholder="1536" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('25Live reservations URL', 'Use a 25Live rm_reservations.xml URL. The app will keep space_id matched to the room ID and preserve date query values.')}
+          <input type="text" value="${escapeHtml(roomSign.feed_url ?? '')}" data-global-field="room_sign.feed_url" placeholder="https://25live.collegenet.com/25live/data/utk/run/rm_reservations.xml?caller=pro&space_id=1536&start_dt=-30&end_dt=%2B180&options=standard" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Calendar web name', 'Optional fallback for published 25Live/Trumba JSON feeds. Leave blank when using the reservations URL above.')}
+          <input type="text" value="${escapeHtml(roomSign.calendar_web_name ?? '')}" data-global-field="room_sign.calendar_web_name" placeholder="yourcalendarwebname" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Timezone', 'Timezone used to format event dates and times on the sign.')}
+          <input type="text" value="${escapeHtml(roomSign.timezone ?? 'America/New_York')}" data-global-field="room_sign.timezone" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Lookahead days', 'How many days ahead to display when the sign is not on air or recording.')}
+          <input type="number" min="1" max="31" value="${escapeHtml(roomSign.lookahead_days ?? 7)}" data-global-field="room_sign.lookahead_days" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Max events', 'Maximum number of upcoming events shown in schedule mode.')}
+          <input type="number" min="1" max="20" value="${escapeHtml(roomSign.max_events ?? 6)}" data-global-field="room_sign.max_events" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Refresh seconds', 'How often the app refreshes 25Live schedule data. 60 seconds is a practical default.')}
+          <input type="number" min="15" max="3600" value="${escapeHtml(roomSign.refresh_seconds ?? 60)}" data-global-field="room_sign.refresh_seconds" />
+        </label>
       </div>
     </article>
     `)}
@@ -518,6 +573,17 @@ function normalizeForSave() {
       on_air_source_variable_name: String(configState.companion.on_air_source_variable_name || '').trim(),
       next_source_variable_name: String(configState.companion.next_source_variable_name || '').trim(),
       status_sign_variable_name: String(configState.companion.status_sign_variable_name || '').trim(),
+    },
+    room_sign: {
+      enabled: Boolean(configState.room_sign.enabled),
+      room_name: String(configState.room_sign.room_name || 'Studio').trim() || 'Studio',
+      room_id: String(configState.room_sign.room_id || '').trim(),
+      feed_url: String(configState.room_sign.feed_url || '').trim(),
+      calendar_web_name: String(configState.room_sign.calendar_web_name || '').trim(),
+      timezone: String(configState.room_sign.timezone || 'America/New_York').trim() || 'America/New_York',
+      lookahead_days: Number(configState.room_sign.lookahead_days || 7),
+      max_events: Number(configState.room_sign.max_events || 6),
+      refresh_seconds: Number(configState.room_sign.refresh_seconds || 60),
     },
     anchor_photos: {
       enabled: Boolean(configState.anchor_photos.enabled),

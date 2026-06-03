@@ -53,6 +53,18 @@ DEFAULT_ANCHOR_PHOTOS = {
     "timeout_seconds": 4,
 }
 
+DEFAULT_ROOM_SIGN = {
+    "enabled": False,
+    "room_name": "Studio",
+    "room_id": "",
+    "feed_url": "",
+    "calendar_web_name": "",
+    "timezone": "America/New_York",
+    "lookahead_days": 7,
+    "max_events": 6,
+    "refresh_seconds": 60,
+}
+
 
 def default_mic_entry(index: int, name: str, receiver: str, channel: str) -> dict:
     return {
@@ -92,6 +104,7 @@ DEFAULT_MAPPING = {
     "display": deepcopy(DEFAULT_DISPLAY),
     "companion": deepcopy(DEFAULT_COMPANION),
     "anchor_photos": deepcopy(DEFAULT_ANCHOR_PHOTOS),
+    "room_sign": deepcopy(DEFAULT_ROOM_SIGN),
     "default_connection": {
         "scheme": "tcp",
         "port": 2202,
@@ -253,6 +266,20 @@ def _normalize_anchor_photos(raw_anchor_photos: dict | None) -> dict:
     return anchor_photos
 
 
+def _normalize_room_sign(raw_room_sign: dict | None) -> dict:
+    room_sign = {**DEFAULT_ROOM_SIGN, **(raw_room_sign or {})}
+    room_sign["enabled"] = _normalize_bool(room_sign.get("enabled"), DEFAULT_ROOM_SIGN["enabled"])
+    room_sign["room_name"] = str(room_sign.get("room_name") or DEFAULT_ROOM_SIGN["room_name"]).strip()
+    room_sign["room_id"] = str(room_sign.get("room_id") or "").strip()
+    room_sign["feed_url"] = str(room_sign.get("feed_url") or "").strip()
+    room_sign["calendar_web_name"] = str(room_sign.get("calendar_web_name") or "").strip()
+    room_sign["timezone"] = str(room_sign.get("timezone") or DEFAULT_ROOM_SIGN["timezone"]).strip()
+    room_sign["lookahead_days"] = max(1, min(31, int(room_sign.get("lookahead_days") or 7)))
+    room_sign["max_events"] = max(1, min(20, int(room_sign.get("max_events") or 6)))
+    room_sign["refresh_seconds"] = max(15, min(3600, int(room_sign.get("refresh_seconds") or 60)))
+    return room_sign
+
+
 class StateStore:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -320,6 +347,7 @@ class MappingStore:
         mapping["display"] = _normalize_display(raw.get("display"))
         mapping["companion"] = _normalize_companion(raw.get("companion"))
         mapping["anchor_photos"] = _normalize_anchor_photos(raw.get("anchor_photos"))
+        mapping["room_sign"] = _normalize_room_sign(raw.get("room_sign"))
         mapping["default_connection"].update(raw.get("default_connection", {}))
 
         if "mics" in raw:

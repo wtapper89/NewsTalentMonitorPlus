@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import httpx
 
 from app.models import MicSnapshot
 from app.services.dashboard import DashboardService
 from app.services.photos import AnchorPhotoResolver, normalized_anchor_filename, parse_unc_path
+from app.services.room_sign import RoomSignService
 from app.services.shure import (
     MicboardAdapter,
     MockShureAdapter,
@@ -140,6 +143,34 @@ class MappingStoreTests(unittest.TestCase):
             self.assertEqual(mapping["anchor_photos"]["share_path"], "\\\\server\\folder")
             self.assertEqual(mapping["mics"][0]["assignment_variable_name"], "mic_1_anchor")
 
+    def test_mapping_store_normalizes_room_sign_section(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mapping_file = Path(temp_dir) / "mapping.json"
+            mapping_file.write_text(
+                """
+                {
+                  "room_sign": {
+                    "enabled": true,
+                    "room_name": "COM 251",
+                    "room_id": "1536",
+                    "feed_url": "https://25live.collegenet.com/25live/data/utk/run/rm_reservations.xml?caller=pro&space_id=1536&start_dt=-30&end_dt=+180&options=standard",
+                    "timezone": "America/New_York",
+                    "lookahead_days": 7,
+                    "max_events": 6,
+                    "refresh_seconds": 60
+                  }
+                }
+                """.strip(),
+                encoding="utf-8",
+            )
+
+            mapping = MappingStore(mapping_file).load()
+
+            self.assertTrue(mapping["room_sign"]["enabled"])
+            self.assertEqual(mapping["room_sign"]["room_name"], "COM 251")
+            self.assertEqual(mapping["room_sign"]["room_id"], "1536")
+            self.assertEqual(mapping["room_sign"]["lookahead_days"], 7)
+
 
 class AnchorPhotoTests(unittest.TestCase):
     def test_anchor_photo_names_match_share_filenames(self) -> None:
@@ -162,6 +193,60 @@ class AnchorPhotoTests(unittest.TestCase):
                 "http://vmix:8090/photos/JohnSmith.jpeg",
             ],
         )
+
+
+class RoomSignServiceTests(unittest.TestCase):
+    def test_25live_reservations_xml_is_parsed_and_filtered_by_room_id(self) -> None:
+        xml = """
+        <r25:space_reservations xmlns:r25="http://www.collegenet.com/r25">
+          <r25:space_reservation>
+            <r25:reservation_id>19790767</r25:reservation_id>
+            <r25:reservation_start_dt>2026-06-04T11:00:00-04:00</r25:reservation_start_dt>
+            <r25:reservation_end_dt>2026-06-04T12:00:00-04:00</r25:reservation_end_dt>
+            <r25:spaces>
+              <r25:space_id>1536</r25:space_id>
+              <r25:space_name>COM 251 - John Williams Studio</r25:space_name>
+            </r25:spaces>
+            <r25:event>
+              <r25:event_id>368657</r25:event_id>
+              <r25:event_name>TVC News Test</r25:event_name>
+              <r25:state_name>Confirmed</r25:state_name>
+            </r25:event>
+          </r25:space_reservation>
+        </r25:space_reservations>
+        """
+        with tempfile.TemporaryDirectory() as temp_dir:
+            service = RoomSignService(MappingStore(Path(temp_dir) / "mapping.json"))
+            events = service._parse_events(  # type: ignore[attr-defined]
+                xml,
+                "text/xml",
+                ZoneInfo("America/New_York"),
+                "1536",
+                "",
+            )
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].title, "TVC News Test")
+        self.assertEqual(events[0].room_id, "1536")
+        self.assertEqual(events[0].location, "COM 251 - John Williams Studio")
+
+    def test_25live_feed_url_preserves_plus_offset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            service = RoomSignService(MappingStore(Path(temp_dir) / "mapping.json"))
+            url = service._feed_url(  # type: ignore[attr-defined]
+                {
+                    "room_id": "1536",
+                    "feed_url": (
+                        "https://25live.collegenet.com/25live/data/utk/run/rm_reservations.xml"
+                        "?caller=pro&space_id=1536&start_dt=-30&end_dt=+180&options=standard"
+                    ),
+                    "lookahead_days": 7,
+                },
+                datetime(2026, 6, 3, 12, 0, tzinfo=ZoneInfo("America/New_York")),
+            )
+
+        self.assertIn("space_id=1536", url)
+        self.assertIn("end_dt=%2B180", url)
 
 
 class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
