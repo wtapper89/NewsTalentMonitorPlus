@@ -6,6 +6,7 @@ const nowSourceEl = document.getElementById('nowSource')
 const nextPanelEl = document.getElementById('nextPanel')
 const nextLabelEl = document.getElementById('nextLabel')
 const nextSourceEl = document.getElementById('nextSource')
+const previewStageEl = document.getElementById('previewStage')
 const previewFrameEl = document.getElementById('previewFrame')
 const statusSignEl = document.getElementById('statusSign')
 const micStripEl = document.getElementById('micStrip')
@@ -44,8 +45,8 @@ function titleCaseFallback(value) {
 
 function statusSignFontSize(text) {
   const length = String(text || '').trim().length
-  if (length >= 18) return 'clamp(0.72rem, 1vw, 1.2rem)'
-  if (length >= 12) return 'clamp(0.82rem, 1.25vw, 1.55rem)'
+  if (length >= 18) return 'clamp(1rem, 2vw, 2.8rem)'
+  if (length >= 12) return 'clamp(1.25rem, 2.8vw, 3.8rem)'
   return ''
 }
 
@@ -203,23 +204,16 @@ function renderStatusSign(display) {
   const enabled = display.status_sign_enabled !== false
   const mode = String(display.status_sign_mode || 'empty').trim()
   const text = String(display.status_sign_text || '').trim()
+  const isHot = enabled && Boolean(text) && (mode === 'on-air' || mode === 'recording')
+
+  previewStageEl?.classList.toggle('status-hot', isHot)
+  previewStageEl?.classList.toggle('status-custom', enabled && Boolean(text) && mode === 'custom')
   statusSignEl.className = 'status-sign'
 
   if (!enabled || !text || mode === 'empty') {
     statusSignEl.classList.add('status-sign-empty')
+    statusSignEl.style.removeProperty('--status-sign-font-size')
     statusSignEl.innerHTML = ''
-    return
-  }
-
-  if (mode === 'on-air') {
-    statusSignEl.classList.add('status-sign-on-air')
-    statusSignEl.innerHTML = '<img class="status-sign-image" src="/static/assets/neon-on-air.svg" alt="ON AIR" />'
-    return
-  }
-
-  if (mode === 'recording') {
-    statusSignEl.classList.add('status-sign-recording')
-    statusSignEl.innerHTML = '<img class="status-sign-image" src="/static/assets/neon-recording.svg" alt="RECORDING" />'
     return
   }
 
@@ -229,11 +223,9 @@ function renderStatusSign(display) {
   } else {
     statusSignEl.style.removeProperty('--status-sign-font-size')
   }
-  statusSignEl.classList.add('status-sign-custom')
+  statusSignEl.classList.add(`status-sign-${mode}`)
   statusSignEl.innerHTML = `
-    <div class="status-neon-custom">
-      <span class="status-neon-text">${escapeHtml(text)}</span>
-    </div>
+    <span class="status-edge-text">${escapeHtml(text)}</span>
   `
 }
 
