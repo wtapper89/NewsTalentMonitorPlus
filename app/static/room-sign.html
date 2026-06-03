@@ -4,10 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>News Talent Monitor+ Room Sign</title>
-    <link rel="stylesheet" href="/static/room-sign.css?v=20260603-room-sign" />
+    <link rel="stylesheet" href="/static/room-sign.css?v=20260603-kiosk-menu" />
   </head>
   <body>
     <main class="room-sign-shell">
+      <details class="kiosk-menu">
+        <summary class="kiosk-menu-toggle" title="Open menu" aria-label="Open menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </summary>
+        <nav class="kiosk-menu-panel" aria-label="Kiosk navigation">
+          <a href="/display">Talent Display</a>
+          <a href="/room-sign">Room Sign</a>
+          <a href="/dashboard">Dashboard</a>
+          <a href="/config">Config</a>
+        </nav>
+      </details>
       <section class="status-view" id="statusView" aria-live="polite">
         <div class="status-word" id="statusText">ON AIR</div>
         <footer class="event-footer">
@@ -30,6 +43,6 @@
       </section>
     </main>
 
-    <script src="/static/room-sign.js?v=20260603-room-sign" defer></script>
+    <script src="/static/room-sign.js?v=20260603-kiosk-menu" defer></script>
   </body>
 </html>

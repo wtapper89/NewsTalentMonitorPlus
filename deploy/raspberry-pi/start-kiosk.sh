@@ -1,7 +1,17 @@
 #!/bin/bash
 set -eu
 
-APP_URL="${ANCHOR_MICS_KIOSK_URL:-http://127.0.0.1:8010/display}"
+APP_URL="${ANCHOR_MICS_KIOSK_URL:-}"
+if [ -z "${APP_URL}" ]; then
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    APP_URL="$(curl -fsS http://127.0.0.1:8010/api/kiosk-url 2>/dev/null || true)"
+    if [ -n "${APP_URL}" ]; then
+      break
+    fi
+    sleep 1
+  done
+fi
+APP_URL="${APP_URL:-http://127.0.0.1:8010/display}"
 
 xset -dpms || true
 xset s off || true

@@ -171,6 +171,27 @@ class MappingStoreTests(unittest.TestCase):
             self.assertEqual(mapping["room_sign"]["room_id"], "1536")
             self.assertEqual(mapping["room_sign"]["lookahead_days"], 7)
 
+    def test_mapping_store_normalizes_kiosk_default_page(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mapping_file = Path(temp_dir) / "mapping.json"
+            mapping_file.write_text(
+                """
+                {
+                  "kiosk": {
+                    "default_page": "room-sign"
+                  }
+                }
+                """.strip(),
+                encoding="utf-8",
+            )
+
+            mapping = MappingStore(mapping_file).load()
+
+            self.assertEqual(mapping["kiosk"]["default_page"], "room-sign")
+
+            mapping = MappingStore(mapping_file).save({"kiosk": {"default_page": "bad-page"}})
+            self.assertEqual(mapping["kiosk"]["default_page"], "display")
+
 
 class AnchorPhotoTests(unittest.TestCase):
     def test_anchor_photo_names_match_share_filenames(self) -> None:

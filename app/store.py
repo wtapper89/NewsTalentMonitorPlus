@@ -65,6 +65,10 @@ DEFAULT_ROOM_SIGN = {
     "refresh_seconds": 60,
 }
 
+DEFAULT_KIOSK = {
+    "default_page": "display",
+}
+
 
 def default_mic_entry(index: int, name: str, receiver: str, channel: str) -> dict:
     return {
@@ -105,6 +109,7 @@ DEFAULT_MAPPING = {
     "companion": deepcopy(DEFAULT_COMPANION),
     "anchor_photos": deepcopy(DEFAULT_ANCHOR_PHOTOS),
     "room_sign": deepcopy(DEFAULT_ROOM_SIGN),
+    "kiosk": deepcopy(DEFAULT_KIOSK),
     "default_connection": {
         "scheme": "tcp",
         "port": 2202,
@@ -280,6 +285,15 @@ def _normalize_room_sign(raw_room_sign: dict | None) -> dict:
     return room_sign
 
 
+def _normalize_kiosk(raw_kiosk: dict | None) -> dict:
+    kiosk = {**DEFAULT_KIOSK, **(raw_kiosk or {})}
+    default_page = str(kiosk.get("default_page") or DEFAULT_KIOSK["default_page"]).strip().lower()
+    if default_page not in {"display", "room-sign", "dashboard", "config"}:
+        default_page = DEFAULT_KIOSK["default_page"]
+    kiosk["default_page"] = default_page
+    return kiosk
+
+
 class StateStore:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -348,6 +362,7 @@ class MappingStore:
         mapping["companion"] = _normalize_companion(raw.get("companion"))
         mapping["anchor_photos"] = _normalize_anchor_photos(raw.get("anchor_photos"))
         mapping["room_sign"] = _normalize_room_sign(raw.get("room_sign"))
+        mapping["kiosk"] = _normalize_kiosk(raw.get("kiosk"))
         mapping["default_connection"].update(raw.get("default_connection", {}))
 
         if "mics" in raw:

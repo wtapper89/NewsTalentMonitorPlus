@@ -24,6 +24,7 @@ let configState = {
   companion: {},
   anchor_photos: {},
   room_sign: {},
+  kiosk: {},
   auth: {},
   default_connection: {},
   mics: [],
@@ -91,6 +92,7 @@ function buildGlobalFields() {
   const companion = configState.companion || {}
   const anchorPhotos = configState.anchor_photos || {}
   const roomSign = configState.room_sign || {}
+  const kiosk = configState.kiosk || {}
 
   globalConfigEl.innerHTML = `
     ${renderTabs()}
@@ -143,6 +145,15 @@ function buildGlobalFields() {
         <label class="stack">
           ${fieldLabel('Font family', 'Fonts Chromium should try for the kiosk display. The font must be installed on the Pi.')}
           <input type="text" value="${escapeHtml(display.font_family ?? 'Gotham, Montserrat, Arial, sans-serif')}" data-global-field="display.font_family" />
+        </label>
+        <label class="stack">
+          ${fieldLabel('Kiosk startup page', 'Which page Chromium should open automatically when the Pi boots into kiosk mode.')}
+          <select data-global-field="kiosk.default_page">
+            <option value="display" ${String(kiosk.default_page || 'display') === 'display' ? 'selected' : ''}>Talent display</option>
+            <option value="room-sign" ${String(kiosk.default_page || '') === 'room-sign' ? 'selected' : ''}>Room sign</option>
+            <option value="dashboard" ${String(kiosk.default_page || '') === 'dashboard' ? 'selected' : ''}>Dashboard</option>
+            <option value="config" ${String(kiosk.default_page || '') === 'config' ? 'selected' : ''}>Config</option>
+          </select>
         </label>
         <label class="stack">
           ${fieldLabel('Show Now box', 'Hide this if you do not want the green PGM/Now panel in the top bar.')}
@@ -584,6 +595,9 @@ function normalizeForSave() {
       lookahead_days: Number(configState.room_sign.lookahead_days || 7),
       max_events: Number(configState.room_sign.max_events || 6),
       refresh_seconds: Number(configState.room_sign.refresh_seconds || 60),
+    },
+    kiosk: {
+      default_page: String(configState.kiosk.default_page || 'display').trim() || 'display',
     },
     anchor_photos: {
       enabled: Boolean(configState.anchor_photos.enabled),

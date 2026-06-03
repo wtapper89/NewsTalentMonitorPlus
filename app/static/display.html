@@ -4,15 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>News Talent Monitor+ Display</title>
-    <link rel="stylesheet" href="/static/display.css?v=20260603-edge-status" />
+    <link rel="stylesheet" href="/static/display.css?v=20260603-kiosk-menu" />
   </head>
   <body>
     <main class="display-shell">
-      <a class="kiosk-menu" href="/config" title="Open config" aria-label="Open config">
-        <span></span>
-        <span></span>
-        <span></span>
-      </a>
+      <details class="kiosk-menu">
+        <summary class="kiosk-menu-toggle" title="Open menu" aria-label="Open menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </summary>
+        <nav class="kiosk-menu-panel" aria-label="Kiosk navigation">
+          <a href="/display">Talent Display</a>
+          <a href="/room-sign">Room Sign</a>
+          <a href="/dashboard">Dashboard</a>
+          <a href="/config">Config</a>
+        </nav>
+      </details>
       <header class="display-header">
         <div class="clock-block">
           <span class="clock-time" id="clockTime">--:--:-- --</span>
@@ -39,6 +47,6 @@
       <section class="mic-strip" id="micStrip"></section>
     </main>
 
-    <script src="/static/display.js?v=20260603-edge-status" defer></script>
+    <script src="/static/display.js?v=20260603-kiosk-menu" defer></script>
   </body>
 </html>

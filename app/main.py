@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -160,6 +160,10 @@ class RoomSignConfigRequest(BaseModel):
     refresh_seconds: int = Field(default=60, ge=15, le=3600)
 
 
+class KioskConfigRequest(BaseModel):
+    default_page: str = Field(default="display", max_length=32)
+
+
 class MicConnectionRequest(BaseModel):
     id: str = Field(min_length=1, max_length=64)
     default_name: str = Field(min_length=1, max_length=64)
@@ -185,6 +189,7 @@ class ConfigUpdateRequest(BaseModel):
     companion: CompanionConfigRequest = Field(default_factory=CompanionConfigRequest)
     anchor_photos: AnchorPhotosConfigRequest = Field(default_factory=AnchorPhotosConfigRequest)
     room_sign: RoomSignConfigRequest = Field(default_factory=RoomSignConfigRequest)
+    kiosk: KioskConfigRequest = Field(default_factory=KioskConfigRequest)
     auth: AuthConfigRequest = Field(default_factory=AuthConfigRequest)
     default_connection: DefaultConnectionRequest = Field(default_factory=DefaultConnectionRequest)
     mics: list[MicConnectionRequest] = Field(default_factory=list)
@@ -235,6 +240,7 @@ def build_config_response(request: Request) -> dict:
         "companion": mapping.get("companion", {}),
         "anchor_photos": mapping.get("anchor_photos", {}),
         "room_sign": mapping.get("room_sign", {}),
+        "kiosk": mapping.get("kiosk", {}),
         "default_connection": mapping.get("default_connection", {}),
         "auth": mapping.get("auth", {}),
         "mics": mics,
@@ -270,6 +276,23 @@ async def room_sign_page() -> FileResponse:
 async def health(request: Request) -> dict:
     state = await service_from(request).get_state()
     return {"status": state["connection_status"], "source": state["source"]}
+
+
+def kiosk_path_for(default_page: str) -> str:
+    return {
+        "display": "/display",
+        "room-sign": "/room-sign",
+        "dashboard": "/dashboard",
+        "config": "/config",
+    }.get(default_page, "/display")
+
+
+@app.get("/api/kiosk-url", response_class=PlainTextResponse)
+async def get_kiosk_url(request: Request) -> str:
+    mapping = mapping_store_from(request).load()
+    default_page = str((mapping.get("kiosk") or {}).get("default_page") or "display")
+    runtime_config = runtime_config_from(request)
+    return f"http://127.0.0.1:{runtime_config.port}{kiosk_path_for(default_page)}"
 
 
 @app.get("/api/state")
