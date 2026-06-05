@@ -2,6 +2,6 @@
 Type=Application
 Name=Install News Talent Monitor+
 Comment=Install News Talent Monitor+ on Raspberry Pi OS
-Exec=lxterminal -e bash -lc "cd \"$(dirname '%k')/../..\" && sudo bash installers/raspberry-pi/install.sh; read -p 'Press Enter to close...'"
-Terminal=false
+Exec=sh -c "exec \"\$(dirname \"\$0\")/install-desktop.sh\"" %k
+Terminal=true
 Categories=Utility;
