@@ -8,7 +8,7 @@ Type=simple
 User=cci
 WorkingDirectory=/opt/anchor-mics
 Environment=ANCHOR_MICS_SOURCE=qlxd
-Environment=ANCHOR_MICS_HOST=127.0.0.1
+Environment=ANCHOR_MICS_HOST=0.0.0.0
 Environment=ANCHOR_MICS_PORT=8010
 ExecStart=/opt/anchor-mics/.venv/bin/python /opt/anchor-mics/run.py
 Restart=always

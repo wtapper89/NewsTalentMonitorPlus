@@ -44,8 +44,10 @@ tar \
   --exclude ".git" \
   --exclude ".venv" \
   --exclude ".pi-image-build" \
+  --exclude "config/system_api_mapping.example.json" \
   --exclude "__pycache__" \
-  --exclude "data/anchor-mics.log" \
+  --exclude "data/state.json" \
+  --exclude "data/*.log" \
   -czf "${APP_ARCHIVE}" \
   -C "${REPO_ROOT}" .
 
