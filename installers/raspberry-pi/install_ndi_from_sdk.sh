@@ -12,7 +12,18 @@ fi
 echo
 echo "The NDI SDK/runtime is licensed by NDI."
 echo "Only continue if you have reviewed and accept the NDI SDK license."
-read -r -p "Type y to install the NDI runtime from this SDK archive: " accept_ndi
+
+accept_ndi="${NEWS_TALENT_MONITOR_ACCEPT_NDI_LICENSE:-}"
+if [ -z "${accept_ndi}" ]; then
+  if [ -t 0 ]; then
+    read -r -p "Type y to install the NDI runtime from this SDK archive: " accept_ndi
+  else
+    echo "No interactive terminal is available for the NDI license prompt."
+    echo "Skipped NDI runtime install."
+    exit 0
+  fi
+fi
+
 if [ "${accept_ndi}" != "y" ] && [ "${accept_ndi}" != "Y" ]; then
   echo "Skipped NDI runtime install."
   exit 0

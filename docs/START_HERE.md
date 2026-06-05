@@ -1,6 +1,30 @@
 # Start Here
 
-This is the simplest from-scratch setup path for News Talent Monitor+.
+The recommended from-scratch setup is to install News Talent Monitor+ as a program on Raspberry Pi OS with Desktop.
+
+On the Raspberry Pi, open Terminal and paste:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wtapper89/NewsTalentMonitorPlus/main/install-pi.sh | bash
+```
+
+If `curl` is not available:
+
+```bash
+wget -qO- https://raw.githubusercontent.com/wtapper89/NewsTalentMonitorPlus/main/install-pi.sh | bash
+```
+
+Before running the installer, download the Linux NDI SDK from NDI and put this exact file in the Pi user's Downloads folder if you want native NDI preview:
+
+```text
+~/Downloads/Install_NDI_SDK_v6_Linux.tar.gz
+```
+
+The installer will install the app, start the services, and open the kiosk page at boot.
+
+## Custom Image Builder
+
+This older path is only for creating a custom flashable `.img.xz` file for many Pis.
 
 There are two separate jobs:
 

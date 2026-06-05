@@ -11,6 +11,17 @@ The easiest install path is now the normal program installer for your operating 
 ```text
 NewsTalentMonitorPlus-Setup.exe
 Install on macOS.command
+```
+
+Raspberry Pi OS with Desktop can be installed from Terminal with:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wtapper89/NewsTalentMonitorPlus/main/install-pi.sh | bash
+```
+
+Installer docs:
+
+```text
 installers/windows/README.md
 installers/macos/README.md
 installers/raspberry-pi/README.md

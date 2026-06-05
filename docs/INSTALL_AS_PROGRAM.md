@@ -21,8 +21,8 @@ That is the approach used by the Raspberry Pi OS installer in this repo.
 Target user:
 
 - Someone has installed Raspberry Pi OS with Desktop.
-- They downloaded or copied this project folder to the Pi.
-- They want to double-click an installer.
+- They want the fastest command-line install.
+- They do not want to build a custom Pi image.
 
 Steps:
 
@@ -38,30 +38,47 @@ https://ndi.video/for-developers/ndi-sdk/download/
 ~/Downloads/Install_NDI_SDK_v6_Linux.tar.gz
 ```
 
-3. Open the project folder on the Pi.
-4. Open:
+3. Open Terminal on the Pi.
+4. Paste:
 
-```text
-installers/raspberry-pi
+```bash
+curl -fsSL https://raw.githubusercontent.com/wtapper89/NewsTalentMonitorPlus/main/install-pi.sh | bash
 ```
 
-5. Double-click:
+If `curl` is not available:
 
-```text
-Install News Talent Monitor.desktop
+```bash
+wget -qO- https://raw.githubusercontent.com/wtapper89/NewsTalentMonitorPlus/main/install-pi.sh | bash
 ```
-
-6. Follow the prompts.
 
 The installer:
 
-- Installs system packages.
+- Downloads the current source from GitHub.
+- Installs system packages with `apt`.
 - Copies the app to `/opt/news-talent-monitor`.
 - Creates a Python virtual environment.
 - Installs Python dependencies.
 - Installs the NDI runtime from the SDK archive if the user accepts the NDI license prompt.
 - Installs systemd services.
-- Opens the kiosk display at boot.
+- Opens the configured kiosk page at boot.
+
+## Raspberry Pi OS Desktop Install
+
+If someone already downloaded or copied this project folder to the Pi, they can use the desktop installer instead.
+
+1. Open:
+
+```text
+installers/raspberry-pi
+```
+
+2. Double-click:
+
+```text
+Install News Talent Monitor.desktop
+```
+
+3. Follow the prompts.
 
 ## Windows Install Direction
 
