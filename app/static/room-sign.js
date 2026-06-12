@@ -3,11 +3,13 @@ const scheduleViewEl = document.getElementById('scheduleView')
 const statusTextEl = document.getElementById('statusText')
 const currentEventTitleEl = document.getElementById('currentEventTitle')
 const currentEventMetaEl = document.getElementById('currentEventMeta')
+const statusWordEl = statusTextEl.closest('.status-word')
 const scheduleRoomNameEl = document.getElementById('scheduleRoomName')
 const clockTextEl = document.getElementById('clockText')
 const eventListEl = document.getElementById('eventList')
 const roomFallbackEl = document.getElementById('roomFallback')
 const scheduleErrorEl = document.getElementById('scheduleError')
+const availabilityPillEl = document.getElementById('availabilityPill')
 
 const REFRESH_MS = 1000
 
@@ -19,11 +21,36 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;')
 }
 
-function statusFontSize(text) {
-  const length = String(text || '').trim().length
-  if (length >= 16) return 'clamp(4rem, 9vw, 10rem)'
-  if (length >= 11) return 'clamp(5.8rem, 13vw, 15rem)'
-  return ''
+function fitStatusText() {
+  if (!statusViewEl.classList.contains('is-active')) return
+
+  const footerBounds = statusViewEl.querySelector('.event-footer').getBoundingClientRect()
+  const statusStyles = window.getComputedStyle(statusViewEl)
+  const horizontalPadding = parseFloat(statusStyles.paddingLeft) + parseFloat(statusStyles.paddingRight)
+  const verticalPadding = parseFloat(statusStyles.paddingTop) + parseFloat(statusStyles.paddingBottom)
+  const maxWidth = Math.max(1, (window.innerWidth - horizontalPadding) * 0.98)
+  const maxHeight = Math.max(1, (window.innerHeight - footerBounds.height - verticalPadding) * 0.98)
+  let low = 24
+  let high = Math.max(240, maxHeight * 3)
+
+  for (let i = 0; i < 18; i += 1) {
+    const size = (low + high) / 2
+    statusTextEl.style.fontSize = `${size}px`
+    const textBounds = statusTextEl.getBoundingClientRect()
+    const fits = textBounds.width <= maxWidth && textBounds.height <= maxHeight
+    if (fits) {
+      low = size
+    } else {
+      high = size
+    }
+  }
+  statusTextEl.style.fontSize = `${Math.floor(low)}px`
+  console.debug('status fit', {
+    text: statusTextEl.textContent,
+    fontSize: Math.floor(low),
+    maxWidth,
+    maxHeight,
+  })
 }
 
 function updateClock() {
@@ -42,13 +69,7 @@ function eventMeta(event) {
 
 function renderStatusMode(state) {
   const text = String(state.status_text || '').trim().toUpperCase()
-  const fontSize = statusFontSize(text)
   statusTextEl.textContent = text || 'ON AIR'
-  if (fontSize) {
-    statusTextEl.style.setProperty('--status-font-size', fontSize)
-  } else {
-    statusTextEl.style.removeProperty('--status-font-size')
-  }
 
   if (state.current_event) {
     currentEventTitleEl.textContent = state.current_event.title || state.room_name || 'Current Event'
@@ -59,13 +80,15 @@ function renderStatusMode(state) {
   }
 
   statusViewEl.classList.add('is-active')
-  scheduleViewEl.classList.remove('is-active')
+  scheduleViewEl.classList.remove('is-active', 'is-available', 'is-in-use')
+  window.requestAnimationFrame(fitStatusText)
 }
 
 function renderScheduleEvent(event) {
+  const isCurrent = Boolean(event && event.is_current)
   return `
-    <article class="schedule-event">
-      <div class="schedule-event-date">${escapeHtml(event.date_label || '')}</div>
+    <article class="schedule-event${isCurrent ? ' is-current' : ''}">
+      <div class="schedule-event-date">${escapeHtml(isCurrent ? 'In Use Now' : event.date_label || '')}</div>
       <div class="schedule-event-title">${escapeHtml(event.title || 'Untitled Event')}</div>
       <div class="schedule-event-time">${escapeHtml(event.time_label || '')}</div>
     </article>
@@ -73,15 +96,22 @@ function renderScheduleEvent(event) {
 }
 
 function renderScheduleMode(state) {
-  const events = Array.isArray(state.upcoming_events) ? state.upcoming_events : []
+  const isInUse = Boolean(state.current_event)
+  const events = [
+    ...(isInUse ? [{ ...state.current_event, is_current: true }] : []),
+    ...(Array.isArray(state.upcoming_events) ? state.upcoming_events : []),
+  ]
   scheduleRoomNameEl.textContent = state.room_name || 'Studio'
   scheduleErrorEl.textContent = state.schedule_error || ''
   eventListEl.innerHTML = events.map(renderScheduleEvent).join('')
   eventListEl.style.display = events.length ? 'grid' : 'none'
-  roomFallbackEl.textContent = state.room_name || 'Studio'
+  roomFallbackEl.textContent = 'No upcoming events'
   roomFallbackEl.classList.toggle('is-active', !events.length)
+  availabilityPillEl.textContent = isInUse ? 'In Use' : 'Available'
 
   scheduleViewEl.classList.add('is-active')
+  scheduleViewEl.classList.toggle('is-in-use', isInUse)
+  scheduleViewEl.classList.toggle('is-available', !isInUse)
   statusViewEl.classList.remove('is-active')
 }
 
@@ -107,10 +137,14 @@ async function tick() {
     await fetchState()
   } catch (error) {
     scheduleErrorEl.textContent = error.message || 'Room sign unavailable'
+    scheduleViewEl.classList.add('is-available')
+    scheduleViewEl.classList.remove('is-in-use')
     statusViewEl.classList.remove('is-active')
     scheduleViewEl.classList.add('is-active')
   }
 }
+
+window.addEventListener('resize', fitStatusText)
 
 tick()
 window.setInterval(tick, REFRESH_MS)

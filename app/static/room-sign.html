@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>News Talent Monitor+ Room Sign</title>
-    <link rel="stylesheet" href="/static/room-sign.css?v=20260603-kiosk-menu" />
+    <link rel="stylesheet" href="/static/room-sign.css?v=20260612-status-viewport-fit" />
   </head>
   <body>
     <main class="room-sign-shell">
@@ -22,7 +22,7 @@
         </nav>
       </details>
       <section class="status-view" id="statusView" aria-live="polite">
-        <div class="status-word" id="statusText">ON AIR</div>
+        <div class="status-word"><span id="statusText">ON AIR</span></div>
         <footer class="event-footer">
           <div class="event-title" id="currentEventTitle">---</div>
           <div class="event-meta" id="currentEventMeta">---</div>
@@ -32,10 +32,13 @@
       <section class="schedule-view" id="scheduleView">
         <header class="schedule-header">
           <div>
-            <p class="schedule-kicker">Upcoming This Week</p>
+            <p class="schedule-kicker">Room Schedule</p>
             <h1 id="scheduleRoomName">Studio</h1>
           </div>
-          <time id="clockText">--:-- --</time>
+          <div class="schedule-side">
+            <div class="availability-pill" id="availabilityPill">Available</div>
+            <time id="clockText">--:-- --</time>
+          </div>
         </header>
         <div class="event-list" id="eventList"></div>
         <div class="room-fallback" id="roomFallback"></div>
@@ -43,6 +46,6 @@
       </section>
     </main>
 
-    <script src="/static/room-sign.js?v=20260603-kiosk-menu" defer></script>
+    <script src="/static/room-sign.js?v=20260612-status-viewport-fit" defer></script>
   </body>
 </html>

@@ -151,7 +151,7 @@ class AnchorPhotosConfigRequest(BaseModel):
 class RoomSignConfigRequest(BaseModel):
     enabled: bool = Field(default=False)
     room_name: str = Field(default="Studio", max_length=128)
-    room_id: str = Field(default="", max_length=64)
+    room_id: str = Field(default="", max_length=255)
     feed_url: str = Field(default="", max_length=2048)
     calendar_web_name: str = Field(default="", max_length=255)
     timezone: str = Field(default="America/New_York", max_length=128)

@@ -102,13 +102,13 @@ class RoomSignService:
         if not config.get("enabled"):
             return [], ""
 
-        url = self._feed_url(config, now)
-        if not url:
+        urls = self._feed_urls(config, now)
+        if not urls:
             return [], "Room sign schedule is enabled, but no 25Live feed URL or calendar web name is configured."
 
         cache_key = json.dumps(
             {
-                "url": url,
+                "urls": urls,
                 "room_id": config.get("room_id"),
                 "room_name": config.get("room_name"),
                 "tz": str(tz),
@@ -120,16 +120,27 @@ class RoomSignService:
             return list(self._cached_events), self._cached_error
 
         try:
-            response = await self._http_client().get(url)
-            response.raise_for_status()
-            events = self._parse_events(
-                response.text,
-                response.headers.get("content-type", ""),
-                tz,
-                str(config.get("room_id") or ""),
-                str(config.get("room_name") or ""),
-            )
-            error = ""
+            events: list[RoomEvent] = []
+            errors: list[str] = []
+            for url in urls:
+                try:
+                    response = await self._http_client().get(url)
+                    response.raise_for_status()
+                    events.extend(
+                        self._parse_events(
+                            response.text,
+                            response.headers.get("content-type", ""),
+                            tz,
+                            self._room_ids(config),
+                            str(config.get("room_name") or ""),
+                        )
+                    )
+                except Exception as exc:
+                    errors.append(f"{url}: {exc}")
+            events = self._dedupe_events(events)
+            error = "; ".join(errors)
+            if not events and errors:
+                raise RuntimeError(error)
         except Exception as exc:
             events = list(self._cached_events)
             error = f"Using cached schedule: {exc}" if events else str(exc)
@@ -140,19 +151,33 @@ class RoomSignService:
         self._cached_error = error
         return events, error
 
-    def _feed_url(self, config: dict, now: datetime) -> str:
+    def _feed_urls(self, config: dict, now: datetime) -> list[str]:
+        room_ids = self._room_ids(config)
         feed_url = str(config.get("feed_url") or "").strip()
-        calendar_web_name = str(config.get("calendar_web_name") or "").strip()
-        if not feed_url and calendar_web_name:
-            feed_url = f"https://25livepub.collegenet.com/calendars/{calendar_web_name}.json"
+        calendar_web_names = self._split_ids(str(config.get("calendar_web_name") or ""))
+        if not feed_url and calendar_web_names:
+            return [
+                self._feed_url(
+                    {**config, "feed_url": f"https://25livepub.collegenet.com/calendars/{calendar_web_name}.json"},
+                    now,
+                    "",
+                )
+                for calendar_web_name in calendar_web_names
+            ]
         if not feed_url:
-            return ""
+            return []
+        if room_ids:
+            return [self._feed_url(config, now, room_id) for room_id in room_ids]
+        return [self._feed_url(config, now, "")]
+
+    def _feed_url(self, config: dict, now: datetime, room_id: str) -> str:
+        feed_url = str(config.get("feed_url") or "").strip()
 
         lookahead_days = int(config.get("lookahead_days") or 7)
         startdate = now.strftime("%Y%m%d")
         enddate = (now + timedelta(days=lookahead_days)).strftime("%Y%m%d")
         replacements = {
-            "room_id": str(config.get("room_id") or ""),
+            "room_id": room_id or str(config.get("room_id") or ""),
             "startdate": startdate,
             "enddate": enddate,
             "days": str(lookahead_days),
@@ -163,7 +188,9 @@ class RoomSignService:
         if "{" not in feed_url and "}" not in feed_url:
             parsed = urlsplit(feed_url)
             query = dict(parse_qsl(parsed.query, keep_blank_values=True))
-            if str(config.get("room_id") or "").strip():
+            if room_id.strip():
+                query["space_id"] = room_id.strip()
+            elif str(config.get("room_id") or "").strip():
                 query["space_id"] = str(config.get("room_id") or "").strip()
             if parsed.path.endswith("rm_reservations.xml"):
                 query.setdefault("start_dt", "-1")
@@ -181,7 +208,34 @@ class RoomSignService:
 
         return feed_url
 
-    def _parse_events(self, text: str, content_type: str, tz: ZoneInfo, room_id: str, room_name: str) -> list[RoomEvent]:
+    @staticmethod
+    def _split_ids(value: str) -> list[str]:
+        return [part.strip() for part in re.split(r"[\s,;]+", value) if part.strip()]
+
+    def _room_ids(self, config: dict) -> list[str]:
+        return self._split_ids(str(config.get("room_id") or ""))
+
+    @staticmethod
+    def _dedupe_events(events: list[RoomEvent]) -> list[RoomEvent]:
+        deduped: dict[tuple[str, str, str, str], RoomEvent] = {}
+        for event in events:
+            key = (
+                event.event_id,
+                event.room_id,
+                event.starts_at.isoformat(),
+                event.title.strip().lower(),
+            )
+            deduped[key] = event
+        return sorted(deduped.values(), key=lambda event: event.starts_at)
+
+    def _parse_events(
+        self,
+        text: str,
+        content_type: str,
+        tz: ZoneInfo,
+        room_ids: list[str],
+        room_name: str,
+    ) -> list[RoomEvent]:
         stripped = text.strip()
         if "xml" in content_type or stripped.startswith("<?xml") or "space_reservations" in stripped[:300]:
             events = self._parse_25live_xml(stripped, tz)
@@ -189,7 +243,7 @@ class RoomSignService:
             events = self._parse_ics(stripped, tz)
         else:
             events = self._parse_json(stripped, tz)
-        filtered = [event for event in events if self._event_matches_room(event, room_id, room_name)]
+        filtered = [event for event in events if self._event_matches_room(event, room_ids, room_name)]
         return sorted(filtered, key=lambda event: event.starts_at)
 
     def _parse_json(self, text: str, tz: ZoneInfo) -> list[RoomEvent]:
@@ -433,15 +487,15 @@ class RoomSignService:
         except (TypeError, ValueError):
             return None
 
-    def _event_matches_room(self, event: RoomEvent, room_id: str, room_name: str) -> bool:
-        room_id = room_id.strip().lower()
+    def _event_matches_room(self, event: RoomEvent, room_ids: list[str], room_name: str) -> bool:
+        room_ids = [room_id.strip().lower() for room_id in room_ids if room_id.strip()]
         room_name = room_name.strip().lower()
         haystack = " ".join([event.location, event.event_id, event.room_id]).lower()
-        if room_id and room_id in haystack:
+        if room_ids and any(room_id in haystack for room_id in room_ids):
             return True
         if room_name and room_name in haystack:
             return True
-        return not room_id
+        return not room_ids
 
     @staticmethod
     def _first_value(item: dict, keys: tuple[str, ...]) -> Any:

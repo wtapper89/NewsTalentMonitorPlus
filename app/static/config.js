@@ -250,15 +250,15 @@ function buildGlobalFields() {
           <input type="text" value="${escapeHtml(roomSign.room_name ?? 'Studio')}" data-global-field="room_sign.room_name" placeholder="COM 251 - John Williams Studio" />
         </label>
         <label class="stack">
-          ${fieldLabel('25Live room ID', 'The 25Live space_id for this room. For your John Williams Studio example, use 1536.')}
-          <input type="text" value="${escapeHtml(roomSign.room_id ?? '')}" data-global-field="room_sign.room_id" placeholder="1536" />
+          ${fieldLabel('25Live room ID(s)', 'One or more 25Live space_id values. Separate multiple rooms with commas, spaces, or new lines.')}
+          <input type="text" value="${escapeHtml(roomSign.room_id ?? '')}" data-global-field="room_sign.room_id" placeholder="1536, 1537" />
         </label>
         <label class="stack">
-          ${fieldLabel('25Live reservations URL', 'Use a 25Live rm_reservations.xml URL. The app will keep space_id matched to the room ID and preserve date query values.')}
+          ${fieldLabel('25Live reservations URL', 'Use a 25Live rm_reservations.xml URL. The app will fetch this URL once per room ID and keep space_id matched to each value.')}
           <input type="text" value="${escapeHtml(roomSign.feed_url ?? '')}" data-global-field="room_sign.feed_url" placeholder="https://25live.collegenet.com/25live/data/utk/run/rm_reservations.xml?caller=pro&space_id=1536&start_dt=-30&end_dt=%2B180&options=standard" />
         </label>
         <label class="stack">
-          ${fieldLabel('Calendar web name', 'Optional fallback for published 25Live/Trumba JSON feeds. Leave blank when using the reservations URL above.')}
+          ${fieldLabel('Calendar web name', 'Optional fallback for published 25Live/Trumba JSON feeds. You can enter multiple names separated by commas when not using the reservations URL above.')}
           <input type="text" value="${escapeHtml(roomSign.calendar_web_name ?? '')}" data-global-field="room_sign.calendar_web_name" placeholder="yourcalendarwebname" />
         </label>
         <label class="stack">

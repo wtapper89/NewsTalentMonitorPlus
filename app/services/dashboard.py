@@ -467,6 +467,8 @@ class DashboardService:
     @staticmethod
     def _status_sign_payload(variable_value: str, fallback_text: str) -> dict[str, str]:
         raw_text = str(variable_value or fallback_text or "").strip()
+        if raw_text.lower() == "[object object]":
+            raw_text = ""
         if not raw_text:
             return {"text": "", "mode": "empty"}
 
@@ -499,11 +501,22 @@ class DashboardService:
 
         if parsed is None:
             return ""
-        if isinstance(parsed, (dict, list)):
-            return json.dumps(parsed)
+        if isinstance(parsed, dict):
+            for key in ("value", "text", "currentValue", "rawValue"):
+                value = parsed.get(key)
+                if value is None:
+                    continue
+                if isinstance(value, (dict, list)):
+                    return ""
+                return str(value).strip()
+            return ""
+        if isinstance(parsed, list):
+            return ""
+        if isinstance(parsed, str) and parsed.strip().lower() == "[object object]":
+            return ""
         return str(parsed).strip()
 
     def _http_client(self) -> httpx.AsyncClient:
         if self._client is None:
-            self._client = httpx.AsyncClient(timeout=2.0)
+            self._client = httpx.AsyncClient(timeout=2.0, verify=False)
         return self._client
