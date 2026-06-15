@@ -151,6 +151,10 @@ body {
     0 0 76px rgba(226, 27, 27, 0.5);
 }
 
+.status-view.status-hot .status-word span {
+  animation: room-neon-pulse 1.25s ease-in-out infinite;
+}
+
 .event-footer {
   min-height: 118px;
   padding-top: 22px;
@@ -158,6 +162,60 @@ body {
   display: grid;
   gap: 8px;
   align-content: center;
+}
+
+.status-view.status-hot .event-footer {
+  animation: room-event-border-pulse 1.25s ease-in-out infinite;
+}
+
+@keyframes room-neon-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1.32);
+    text-shadow:
+      0 0 14px rgba(226, 27, 27, 1),
+      0 0 42px rgba(226, 27, 27, 0.88),
+      0 0 92px rgba(226, 27, 27, 0.62),
+      0 0 132px rgba(226, 27, 27, 0.36);
+  }
+
+  36% {
+    opacity: 0.74;
+    filter: brightness(0.82);
+    text-shadow:
+      0 0 8px rgba(226, 27, 27, 0.7),
+      0 0 24px rgba(226, 27, 27, 0.5),
+      0 0 52px rgba(226, 27, 27, 0.28);
+  }
+
+  45% {
+    opacity: 1;
+    filter: brightness(1.52);
+  }
+
+  52% {
+    opacity: 0.58;
+    filter: brightness(0.68);
+  }
+
+  61% {
+    opacity: 1;
+    filter: brightness(1.38);
+  }
+}
+
+@keyframes room-event-border-pulse {
+  0%,
+  100% {
+    border-top-color: #ff2a20;
+    box-shadow: 0 -12px 30px rgba(226, 27, 27, 0.38);
+  }
+
+  48% {
+    border-top-color: rgba(226, 27, 27, 0.56);
+    box-shadow: 0 -6px 16px rgba(226, 27, 27, 0.18);
+  }
 }
 
 .event-title {
@@ -168,6 +226,13 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-view.status-hot .status-word span,
+  .status-view.status-hot .event-footer {
+    animation: none;
+  }
 }
 
 .event-meta {

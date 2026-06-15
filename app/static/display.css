@@ -206,6 +206,7 @@ body {
   box-shadow:
     inset 0 0 0 7px #ff2116,
     0 0 22px rgba(255, 33, 22, 0.5);
+  animation: hot-frame-pulse 1.35s ease-in-out infinite;
 }
 
 .status-sign {
@@ -247,6 +248,64 @@ body {
     0 0 6px rgba(255, 255, 255, 0.86),
     0 0 18px rgba(25, 215, 255, 0.74),
     0 0 38px rgba(25, 215, 255, 0.52);
+}
+
+.status-sign-on-air .status-edge-text,
+.status-sign-recording .status-edge-text {
+  animation: neon-alert-pulse 1.35s ease-in-out infinite;
+}
+
+@keyframes neon-alert-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1.28);
+    text-shadow:
+      0 0 7px rgba(255, 33, 22, 1),
+      0 0 22px rgba(255, 33, 22, 0.9),
+      0 0 46px rgba(255, 33, 22, 0.7),
+      0 0 74px rgba(255, 33, 22, 0.48);
+  }
+
+  38% {
+    opacity: 0.78;
+    filter: brightness(0.88);
+    text-shadow:
+      0 0 4px rgba(255, 33, 22, 0.72),
+      0 0 12px rgba(255, 33, 22, 0.58),
+      0 0 24px rgba(255, 33, 22, 0.38);
+  }
+
+  46% {
+    opacity: 1;
+    filter: brightness(1.45);
+  }
+
+  53% {
+    opacity: 0.62;
+    filter: brightness(0.72);
+  }
+
+  61% {
+    opacity: 1;
+    filter: brightness(1.34);
+  }
+}
+
+@keyframes hot-frame-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 7px #ff2116,
+      0 0 24px rgba(255, 33, 22, 0.64),
+      0 0 54px rgba(255, 33, 22, 0.28);
+  }
+
+  48% {
+    box-shadow:
+      inset 0 0 0 7px rgba(255, 33, 22, 0.58),
+      0 0 12px rgba(255, 33, 22, 0.36);
+  }
 }
 
 .preview-frame iframe,
@@ -481,6 +540,14 @@ body {
 
   .preview-stage {
     width: min(78vw, 1440px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-stage.status-hot .preview-frame,
+  .status-sign-on-air .status-edge-text,
+  .status-sign-recording .status-edge-text {
+    animation: none;
   }
 }
 

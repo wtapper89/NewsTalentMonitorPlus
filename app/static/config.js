@@ -31,6 +31,7 @@ let configState = {
 }
 let ndiSources = []
 let ndiStatus = null
+let updateStatus = null
 let activeConfigTab = 'display'
 
 const CONFIG_TABS = [
@@ -40,6 +41,7 @@ const CONFIG_TABS = [
   ['photos', 'Photos'],
   ['receivers', 'Receivers'],
   ['mics', 'Mics'],
+  ['system', 'System'],
 ]
 
 function escapeHtml(value) {
@@ -416,6 +418,25 @@ function buildGlobalFields() {
       </div>
     </article>
     `)}
+
+    ${tabPanel('system', `
+    <article class="config-card">
+      <div class="config-card-head">
+        <div>
+          <h3>Software update</h3>
+          <p>Pull the latest News Talent Monitor+ code from GitHub, install Python dependencies, and restart the service.</p>
+        </div>
+      </div>
+      <div class="system-actions">
+        <button type="button" class="button-inline" id="updateCodeButton">Update to latest code</button>
+        <button type="button" class="secondary button-inline" id="refreshUpdateStatusButton">Refresh status</button>
+      </div>
+      <div class="system-note">
+        This preserves local config and data. The page may briefly disconnect while the service restarts.
+      </div>
+      <div id="updateStatusPanel">${renderUpdateStatus()}</div>
+    </article>
+    `)}
   `
 }
 
@@ -430,6 +451,24 @@ function renderNdiStatus(display) {
   const fps = Number.isFinite(Number(ndiStatus.actual_fps)) ? ` | Actual FPS: ${Number(ndiStatus.actual_fps).toFixed(1)}` : ''
   const error = ndiStatus.last_error ? ` Error: ${escapeHtml(ndiStatus.last_error)}` : ''
   return `Status: ${escapeHtml(ndiStatus.connection_status || 'unknown')} | Source: ${escapeHtml(source)} | Frame: ${escapeHtml(frame)}${fps}${error}`
+}
+
+function renderUpdateStatus() {
+  if (!updateStatus) {
+    return 'Update status has not been checked yet.'
+  }
+  const details = Array.isArray(updateStatus.details) ? updateStatus.details.filter(Boolean) : []
+  const detailMarkup = details.length
+    ? `<pre class="update-details">${escapeHtml(details.slice(-12).join('\n'))}</pre>`
+    : ''
+  const method = updateStatus.method ? ` Method: ${escapeHtml(updateStatus.method)}.` : ''
+  return `
+    <div class="update-status ${escapeHtml(updateStatus.state || 'idle')}">
+      <strong>${escapeHtml(updateStatus.message || 'No update status available.')}</strong>
+      <span>State: ${escapeHtml(updateStatus.state || 'idle')}.${method}</span>
+      ${detailMarkup}
+    </div>
+  `
 }
 
 function buildMicCards() {
@@ -757,6 +796,21 @@ document.addEventListener('click', (event) => {
     return
   }
 
+  if (target.id === 'updateCodeButton') {
+    startCodeUpdate().catch((error) => saveStatus(error.message, 'error'))
+    return
+  }
+
+  if (target.id === 'refreshUpdateStatusButton') {
+    refreshUpdateStatus()
+      .then(() => {
+        render()
+        saveStatus('Update status refreshed.', 'ok')
+      })
+      .catch((error) => saveStatus(error.message, 'error'))
+    return
+  }
+
   const ndiSourceButton = target.closest('[data-ndi-source]')
   if (ndiSourceButton instanceof HTMLElement) {
     configState.display = configState.display || {}
@@ -810,6 +864,48 @@ async function refreshNdiStatus() {
   ndiStatus = await response.json()
 }
 
+async function refreshUpdateStatus() {
+  const response = await fetch('/api/update/status', { cache: 'no-store' })
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Update status failed' }))
+    throw new Error(error.detail || 'Update status failed')
+  }
+  updateStatus = await response.json()
+}
+
+function pollUpdateStatus() {
+  const poll = async () => {
+    await refreshUpdateStatus()
+    render()
+    const state = String(updateStatus?.state || '')
+    if (state === 'running') {
+      window.setTimeout(() => {
+        poll().catch(() => {
+          saveStatus('Service may be restarting. Refresh this page in a few seconds.', 'ok')
+        })
+      }, 1500)
+    } else if (state === 'success') {
+      saveStatus('Update complete. Service is restarting; refresh this page in a few seconds.', 'ok')
+    } else if (state === 'error') {
+      saveStatus(updateStatus?.message || 'Update failed.', 'error')
+    }
+  }
+  poll().catch((error) => saveStatus(error.message, 'error'))
+}
+
+async function startCodeUpdate() {
+  saveStatus('Starting update from GitHub...')
+  const response = await fetch('/api/update/start', { method: 'POST' })
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Update failed to start' }))
+    throw new Error(error.detail || 'Update failed to start')
+  }
+  updateStatus = await response.json()
+  render()
+  saveStatus('Update started. Keep this page open until it restarts.', 'ok')
+  pollUpdateStatus()
+}
+
 configFormEl.addEventListener('submit', async (event) => {
   event.preventDefault()
   try {
@@ -820,6 +916,9 @@ configFormEl.addEventListener('submit', async (event) => {
   }
 })
 
-fetchConfig().catch((error) => {
-  saveStatus(error.message, 'error')
-})
+fetchConfig()
+  .then(() => refreshUpdateStatus())
+  .then(() => render())
+  .catch((error) => {
+    saveStatus(error.message, 'error')
+  })
