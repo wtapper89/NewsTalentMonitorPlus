@@ -284,6 +284,13 @@ class QlxdChannelState:
     def has_current_battery(self) -> bool:
         return 1 <= self.battery <= 5
 
+    def has_transmitter_presence(self, now: float) -> bool:
+        if self.has_current_battery():
+            return True
+        if not self.last_sample_at or (now - self.last_sample_at) > QLXD_SAMPLE_TIMEOUT_SECONDS:
+            return False
+        return bool(self.antenna and self.antenna.upper() != "XX")
+
     def has_recent_audio_peak(self, now: float) -> bool:
         return self.peak_at > 0 and (now - self.peak_at) <= QLXD_AUDIO_PEAK_SECONDS
 
@@ -1093,7 +1100,7 @@ class QlxdAdapter(ShureAdapter):
             errors.append("Receiver sample timeout")
 
         battery_percent = state.battery_percent()
-        if is_online and not state.has_current_battery():
+        if is_online and not state.has_transmitter_presence(now):
             is_online = False
             errors.append("Transmitter off or battery unavailable")
 
