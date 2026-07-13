@@ -70,6 +70,8 @@ function eventMeta(event) {
 function renderStatusMode(state) {
   const text = String(state.status_text || '').trim().toUpperCase()
   statusTextEl.textContent = text || 'ON AIR'
+  const mode = String(state.status_mode || '').trim()
+  const isHot = mode === 'on-air' || mode === 'recording'
 
   if (state.current_event) {
     currentEventTitleEl.textContent = state.current_event.title || state.room_name || 'Current Event'
@@ -80,6 +82,7 @@ function renderStatusMode(state) {
   }
 
   statusViewEl.classList.add('is-active')
+  statusViewEl.classList.toggle('status-hot', isHot)
   scheduleViewEl.classList.remove('is-active', 'is-available', 'is-in-use')
   window.requestAnimationFrame(fitStatusText)
 }
@@ -112,7 +115,7 @@ function renderScheduleMode(state) {
   scheduleViewEl.classList.add('is-active')
   scheduleViewEl.classList.toggle('is-in-use', isInUse)
   scheduleViewEl.classList.toggle('is-available', !isInUse)
-  statusViewEl.classList.remove('is-active')
+  statusViewEl.classList.remove('is-active', 'status-hot')
 }
 
 function render(state) {

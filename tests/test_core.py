@@ -300,6 +300,7 @@ class RoomSignServiceTests(unittest.TestCase):
                     "lookahead_days": 7,
                 },
                 datetime(2026, 6, 3, 12, 0, tzinfo=ZoneInfo("America/New_York")),
+                "1536",
             )
 
         self.assertIn("space_id=1536", url)
@@ -665,7 +666,7 @@ class QlxdTelemetryTests(unittest.TestCase):
         self.assertIn("Audio peak", snapshot.errors)
         self.assertIn("Encryption mismatch", snapshot.errors)
 
-    def test_qlxd_adapter_marks_unknown_current_battery_offline(self) -> None:
+    def test_qlxd_adapter_keeps_live_rf_online_when_battery_unknown(self) -> None:
         class FakeRuntime:
             def __init__(self, state: QlxdChannelState) -> None:
                 self.connection_status = "connected"
@@ -680,6 +681,42 @@ class QlxdTelemetryTests(unittest.TestCase):
             state = QlxdChannelState(channel=1)
             state.apply_frame("REP 1 BATT_BARS 003")
             state.apply_frame("SAMPLE 1 ALL XB 080 020")
+            state.apply_frame("REP 1 BATT_BARS U")
+            adapter._receivers[("10.0.0.11", 2202)] = FakeRuntime(state)  # type: ignore[assignment]
+
+            snapshot = adapter._snapshot_for_mic(
+                {
+                    "id": "mic-1",
+                    "default_name": "HOST",
+                    "receiver_name": "Rack A",
+                    "channel_label": "A1",
+                    "receiver_channel": 1,
+                    "device_ip": "10.0.0.11",
+                    "port": 2202,
+                },
+                {"port": 2202},
+            )
+
+        self.assertTrue(snapshot.is_online)
+        self.assertEqual(snapshot.health, "ok")
+        self.assertEqual(snapshot.battery_percent, 60)
+        self.assertNotIn("Transmitter off or battery unavailable", snapshot.errors)
+
+    def test_qlxd_adapter_marks_unknown_battery_and_no_rf_offline(self) -> None:
+        class FakeRuntime:
+            def __init__(self, state: QlxdChannelState) -> None:
+                self.connection_status = "connected"
+                self.last_error = ""
+                self._state = state
+
+            def state_for_channel(self, channel: int) -> QlxdChannelState:
+                return self._state
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            adapter = QlxdAdapter(MappingStore(Path(temp_dir) / "mapping.json"))
+            state = QlxdChannelState(channel=1)
+            state.apply_frame("REP 1 BATT_BARS 003")
+            state.apply_frame("SAMPLE 1 ALL XX 080 020")
             state.apply_frame("REP 1 BATT_BARS U")
             adapter._receivers[("10.0.0.11", 2202)] = FakeRuntime(state)  # type: ignore[assignment]
 

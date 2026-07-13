@@ -710,6 +710,57 @@ button.secondary {
   line-height: 1.5;
 }
 
+.system-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.system-note {
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.update-status {
+  margin-top: 14px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.update-status strong,
+.update-status span {
+  display: block;
+}
+
+.update-status.running strong {
+  color: var(--cyan);
+}
+
+.update-status.success strong {
+  color: var(--green);
+}
+
+.update-status.error strong {
+  color: var(--red);
+}
+
+.update-details {
+  max-height: 220px;
+  margin: 4px 0 0;
+  overflow: auto;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 .config-actions {
   display: flex;
   gap: 14px;

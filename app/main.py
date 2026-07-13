@@ -16,6 +16,7 @@ from app.services.ndi import NDIBridge
 from app.services.photos import AnchorPhotoResolver
 from app.services.room_sign import RoomSignService
 from app.services.shure import MicboardAdapter, MockShureAdapter, QlxdAdapter, SystemApiAdapter
+from app.services.updater import AppUpdater
 from app.store import DEFAULT_FIELDS, MappingStore, StateStore
 
 
@@ -44,6 +45,7 @@ async def lifespan(app: FastAPI):
     ndi_bridge = NDIBridge()
     photo_resolver = AnchorPhotoResolver()
     room_sign_service = RoomSignService(mapping_store)
+    updater = AppUpdater(ROOT_DIR)
 
     stop_event = asyncio.Event()
 
@@ -63,6 +65,7 @@ async def lifespan(app: FastAPI):
     app.state.ndi_bridge = ndi_bridge
     app.state.photo_resolver = photo_resolver
     app.state.room_sign_service = room_sign_service
+    app.state.updater = updater
 
     try:
         yield
@@ -239,6 +242,10 @@ def room_sign_service_from(request: Request) -> RoomSignService:
     return request.app.state.room_sign_service
 
 
+def updater_from(request: Request) -> AppUpdater:
+    return request.app.state.updater
+
+
 def build_config_response(request: Request) -> dict:
     mapping = mapping_store_from(request).load()
     runtime_config = runtime_config_from(request)
@@ -320,6 +327,16 @@ async def get_state(request: Request) -> dict:
 @app.get("/api/config")
 async def get_config(request: Request) -> dict:
     return build_config_response(request)
+
+
+@app.get("/api/update/status")
+async def get_update_status(request: Request) -> dict:
+    return updater_from(request).status()
+
+
+@app.post("/api/update/start")
+async def start_update(request: Request) -> dict:
+    return await updater_from(request).start()
 
 
 @app.post("/api/config")
