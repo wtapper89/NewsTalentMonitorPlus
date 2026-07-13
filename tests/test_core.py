@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import struct
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -9,6 +10,7 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from app.models import MicSnapshot
+from app.services.audio_meters import parse_vmix_levels, parse_wing_meter_packet
 from app.services.dashboard import DashboardService
 from app.services.photos import AnchorPhotoResolver, normalized_anchor_filename, parse_unc_path
 from app.services.room_sign import RoomSignService
@@ -191,6 +193,40 @@ class MappingStoreTests(unittest.TestCase):
 
             mapping = MappingStore(mapping_file).save({"kiosk": {"default_page": "bad-page"}})
             self.assertEqual(mapping["kiosk"]["default_page"], "display")
+
+    def test_mapping_store_normalizes_audio_meter_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mapping_file = Path(temp_dir) / "mapping.json"
+            mapping_file.write_text(
+                '{"audio_meters":{"left":{"source":"vmix","target":"busA"},'
+                '"right":{"source":"wing","meter_group":"bus","meter_index":4}}}',
+                encoding="utf-8",
+            )
+
+            meters = MappingStore(mapping_file).load()["audio_meters"]
+
+            self.assertEqual(meters["left"]["target"], "busA")
+            self.assertEqual(meters["right"]["meter_group"], "bus")
+            self.assertEqual(meters["right"]["meter_index"], 4)
+
+
+class AudioMeterTests(unittest.TestCase):
+    def test_vmix_master_and_named_input_levels_are_parsed(self) -> None:
+        xml = """
+        <vmix>
+          <inputs><input number="2" title="Studio Mics" meterF1="0.01" meterF2="0.1" /></inputs>
+          <audio><master meterF1="1" meterF2="0.001" /></audio>
+        </vmix>
+        """
+
+        self.assertEqual(parse_vmix_levels(xml, "master"), (100.0, 0.0))
+        self.assertEqual(parse_vmix_levels(xml, "Studio Mics"), (33.3, 66.7))
+
+    def test_wing_packet_uses_stereo_output_meter_words(self) -> None:
+        report_id = 0x4E544D50
+        packet = struct.pack(">I8h", report_id, -15360, -15360, -7680, -3840, 0, 0, 0, 0)
+
+        self.assertEqual(parse_wing_meter_packet(packet, report_id), (50.0, 75.0))
 
 
 class AnchorPhotoTests(unittest.TestCase):

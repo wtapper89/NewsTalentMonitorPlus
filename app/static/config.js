@@ -25,6 +25,7 @@ let configState = {
   anchor_photos: {},
   room_sign: {},
   kiosk: {},
+  audio_meters: {},
   auth: {},
   default_connection: {},
   mics: [],
@@ -95,6 +96,9 @@ function buildGlobalFields() {
   const anchorPhotos = configState.anchor_photos || {}
   const roomSign = configState.room_sign || {}
   const kiosk = configState.kiosk || {}
+  const audioMeters = configState.audio_meters || {}
+  const leftMeter = audioMeters.left || {}
+  const rightMeter = audioMeters.right || {}
 
   globalConfigEl.innerHTML = `
     ${renderTabs()}
@@ -227,6 +231,18 @@ function buildGlobalFields() {
         <div class="ndi-status">
           ${renderNdiStatus(display)}
         </div>
+      </div>
+    </article>
+    <article class="config-card">
+      <div class="config-card-head">
+        <div>
+          <h3>Audio meters</h3>
+          <p>Two stereo meters shown vertically along the left side of the talent display.</p>
+        </div>
+      </div>
+      <div class="config-card-grid">
+        ${audioMeterFields('left', leftMeter, 'vMix', 'vmix', 8088)}
+        ${audioMeterFields('right', rightMeter, 'WING Master', 'wing', 2222)}
       </div>
     </article>
     `)}
@@ -440,6 +456,49 @@ function buildGlobalFields() {
   `
 }
 
+function audioMeterFields(side, meter, fallbackLabel, fallbackSource, fallbackPort) {
+  const title = side === 'left' ? 'Left meter' : 'Right meter'
+  const source = String(meter.source || fallbackSource)
+  return `
+    <label class="stack">
+      ${fieldLabel(`${title} source`, 'Choose vMix, WING, or Off. Either source can be assigned to either meter position.')}
+      <select data-global-field="audio_meters.${side}.source">
+        <option value="vmix" ${source === 'vmix' ? 'selected' : ''}>vMix</option>
+        <option value="wing" ${source === 'wing' ? 'selected' : ''}>Behringer WING</option>
+        <option value="off" ${source === 'off' ? 'selected' : ''}>Off</option>
+      </select>
+    </label>
+    <label class="stack">
+      ${fieldLabel(`${title} label`, 'Text displayed below this stereo meter.')}
+      <input type="text" value="${escapeHtml(meter.label ?? fallbackLabel)}" data-global-field="audio_meters.${side}.label" />
+    </label>
+    <label class="stack">
+      ${fieldLabel(`${title} host`, 'IP address or hostname of the selected vMix or WING device.')}
+      <input type="text" value="${escapeHtml(meter.host ?? '127.0.0.1')}" data-global-field="audio_meters.${side}.host" placeholder="192.168.1.50" />
+    </label>
+    <label class="stack">
+      ${fieldLabel(`${title} port`, 'vMix Web API is normally 8088. WING native TCP control is normally 2222.')}
+      <input type="number" min="1" max="65535" value="${Number(meter.port || fallbackPort)}" data-global-field="audio_meters.${side}.port" />
+    </label>
+    <label class="stack">
+      ${fieldLabel(`${title} vMix target`, 'Use master, busA through busG, or an input number, exact title, or key.')}
+      <input type="text" value="${escapeHtml(meter.target ?? 'master')}" data-global-field="audio_meters.${side}.target" placeholder="master" />
+    </label>
+    <label class="stack">
+      ${fieldLabel(`${title} WING group`, 'Meter group to read from the WING: main, bus, channel, aux, matrix, or dca.')}
+      <select data-global-field="audio_meters.${side}.meter_group">
+        ${['main', 'bus', 'channel', 'aux', 'matrix', 'dca']
+          .map((group) => `<option value="${group}" ${String(meter.meter_group || 'main') === group ? 'selected' : ''}>${group}</option>`)
+          .join('')}
+      </select>
+    </label>
+    <label class="stack">
+      ${fieldLabel(`${title} WING index`, 'One-based number within the selected WING group. Main 1 is the default master.')}
+      <input type="number" min="1" max="128" value="${Number(meter.meter_index || 1)}" data-global-field="audio_meters.${side}.meter_index" />
+    </label>
+  `
+}
+
 function renderNdiStatus(display) {
   if (!ndiStatus) {
     return 'NDI status has not been checked yet.'
@@ -590,9 +649,13 @@ function newMicConfig() {
 }
 
 function setDeepValue(target, dottedField, value) {
-  const [root, key] = dottedField.split('.')
-  target[root] = target[root] || {}
-  target[root][key] = value
+  const parts = dottedField.split('.')
+  const key = parts.pop()
+  const parent = parts.reduce((node, part) => {
+    node[part] = node[part] || {}
+    return node[part]
+  }, target)
+  parent[key] = value
 }
 
 function normalizeForSave() {
@@ -638,6 +701,20 @@ function normalizeForSave() {
     kiosk: {
       default_page: String(configState.kiosk.default_page || 'display').trim() || 'display',
     },
+    audio_meters: Object.fromEntries(
+      ['left', 'right'].map((side) => {
+        const meter = configState.audio_meters?.[side] || {}
+        return [side, {
+          source: String(meter.source || 'off').trim().toLowerCase(),
+          label: String(meter.label || '').trim(),
+          host: String(meter.host || '127.0.0.1').trim(),
+          port: Number(meter.port || (meter.source === 'wing' ? 2222 : 8088)),
+          target: String(meter.target || 'master').trim(),
+          meter_group: String(meter.meter_group || 'main').trim().toLowerCase(),
+          meter_index: Number(meter.meter_index || 1),
+        }]
+      }),
+    ),
     anchor_photos: {
       enabled: Boolean(configState.anchor_photos.enabled),
       base_url: String(configState.anchor_photos.base_url || '').trim(),

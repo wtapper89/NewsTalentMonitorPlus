@@ -10,6 +10,7 @@ const previewStageEl = document.getElementById('previewStage')
 const previewFrameEl = document.getElementById('previewFrame')
 const statusSignEl = document.getElementById('statusSign')
 const micStripEl = document.getElementById('micStrip')
+const audioMeterDockEl = document.getElementById('audioMeterDock')
 
 let refreshHandle = null
 let clockHandle = null
@@ -199,6 +200,29 @@ function renderSourcePanels(display) {
   nextSourceEl.textContent = String(display.next_source_name || '').trim().toUpperCase() || '---'
 }
 
+function renderAudioMeters(meters) {
+  if (!audioMeterDockEl) return
+  const enabledMeters = Array.isArray(meters) ? meters.filter((meter) => meter.enabled !== false) : []
+  audioMeterDockEl.classList.toggle('is-hidden', !enabledMeters.length)
+  audioMeterDockEl.innerHTML = enabledMeters
+    .map((meter) => {
+      const left = Math.max(0, Math.min(100, Number(meter.left || 0)))
+      const right = Math.max(0, Math.min(100, Number(meter.right || 0)))
+      const stateClass = meter.online ? 'is-online' : 'is-offline'
+      const status = meter.online ? '' : String(meter.error || 'Offline')
+      return `
+        <section class="audio-meter-set ${stateClass}" title="${escapeHtml(status)}">
+          <div class="audio-meter-bars" aria-label="${escapeHtml(`${meter.label || 'Audio'} stereo level`)}">
+            <div class="audio-meter-channel"><span style="--meter-level: ${left}%"></span><small>L</small></div>
+            <div class="audio-meter-channel"><span style="--meter-level: ${right}%"></span><small>R</small></div>
+          </div>
+          <div class="audio-meter-label">${escapeHtml(meter.label || 'Audio')}</div>
+        </section>
+      `
+    })
+    .join('')
+}
+
 function renderStatusSign(display) {
   if (!statusSignEl) return
   const enabled = display.status_sign_enabled !== false
@@ -362,6 +386,7 @@ function renderState(state) {
   renderSourcePanels(display)
   renderStatusSign(display)
   renderPreview(display)
+  renderAudioMeters(state.audio_meters || [])
   renderMicTiles(state.mics || [])
 
   const fontFamily = String(display.font_family || '').trim()

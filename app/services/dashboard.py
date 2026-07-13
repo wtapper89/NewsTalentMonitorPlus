@@ -13,6 +13,7 @@ import httpx
 
 from app.models import LOW_BATTERY_PERCENT, MicSnapshot
 from app.services.photos import AnchorPhotoResolver
+from app.services.audio_meters import AudioMeterService
 from app.store import DEFAULT_ANCHOR_PHOTOS, DEFAULT_COMPANION, DEFAULT_DISPLAY, MappingStore
 from app.store import StateStore
 
@@ -44,6 +45,8 @@ class DashboardService:
         self._client = client
         self._owns_client = client is None
         self._photo_resolver = AnchorPhotoResolver()
+        self._audio_meter_service = AudioMeterService()
+        self._audio_meters: list[dict] = []
         self._display_context = self._default_display_context()
         self._state = self._build_state([], "starting", "Connecting to source")
 
@@ -51,6 +54,7 @@ class DashboardService:
         await self.adapter.close()
         if self._owns_client and self._client is not None:
             await self._client.aclose()
+        await self._audio_meter_service.close()
 
     async def get_state(self) -> dict:
         if not self._state["mics"] and self._state["connection_status"] == "starting":
@@ -80,6 +84,7 @@ class DashboardService:
                         if override_name:
                             mic.shure_name = override_name
                 self._display_context = await self._resolve_display_context()
+                self._audio_meters = await self._audio_meter_service.refresh(mapping.get("audio_meters"))
                 self._record_history(mics)
                 self._state = self._build_state(mics, "ok", "Live data connected")
             except Exception as exc:
@@ -168,6 +173,7 @@ class DashboardService:
             "telemetry_window_seconds": int(TELEMETRY_HISTORY_WINDOW_SECONDS),
             "last_refresh": utc_now_iso(),
             "display": deepcopy(self._display_context),
+            "audio_meters": deepcopy(self._audio_meters),
             "summary": summary,
             "alerts": alerts[:8],
             "mics": mic_payload,

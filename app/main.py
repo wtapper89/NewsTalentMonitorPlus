@@ -167,6 +167,21 @@ class KioskConfigRequest(BaseModel):
     default_page: str = Field(default="display", max_length=32)
 
 
+class AudioMeterRequest(BaseModel):
+    source: str = Field(default="off", max_length=16)
+    label: str = Field(default="", max_length=64)
+    host: str = Field(default="127.0.0.1", max_length=255)
+    port: int = Field(default=8088, ge=1, le=65535)
+    target: str = Field(default="master", max_length=255)
+    meter_group: str = Field(default="main", max_length=16)
+    meter_index: int = Field(default=1, ge=1, le=128)
+
+
+class AudioMetersConfigRequest(BaseModel):
+    left: AudioMeterRequest = Field(default_factory=AudioMeterRequest)
+    right: AudioMeterRequest = Field(default_factory=AudioMeterRequest)
+
+
 class MicConnectionRequest(BaseModel):
     id: str = Field(min_length=1, max_length=64)
     default_name: str = Field(min_length=1, max_length=64)
@@ -193,6 +208,7 @@ class ConfigUpdateRequest(BaseModel):
     anchor_photos: AnchorPhotosConfigRequest = Field(default_factory=AnchorPhotosConfigRequest)
     room_sign: RoomSignConfigRequest = Field(default_factory=RoomSignConfigRequest)
     kiosk: KioskConfigRequest = Field(default_factory=KioskConfigRequest)
+    audio_meters: AudioMetersConfigRequest = Field(default_factory=AudioMetersConfigRequest)
     auth: AuthConfigRequest = Field(default_factory=AuthConfigRequest)
     default_connection: DefaultConnectionRequest = Field(default_factory=DefaultConnectionRequest)
     mics: list[MicConnectionRequest] = Field(default_factory=list)
@@ -248,6 +264,7 @@ def build_config_response(request: Request) -> dict:
         "anchor_photos": mapping.get("anchor_photos", {}),
         "room_sign": mapping.get("room_sign", {}),
         "kiosk": mapping.get("kiosk", {}),
+        "audio_meters": mapping.get("audio_meters", {}),
         "default_connection": mapping.get("default_connection", {}),
         "auth": mapping.get("auth", {}),
         "mics": mics,
