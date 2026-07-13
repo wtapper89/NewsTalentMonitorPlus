@@ -222,22 +222,40 @@ body {
   min-height: 0;
   border: 2px solid rgba(255, 255, 255, 0.86);
   border-radius: 5px;
-  background:
-    repeating-linear-gradient(to top, transparent 0 8px, rgba(0, 0, 0, 0.46) 8px 10px),
-    rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.82);
   overflow: hidden;
 }
 
+.audio-meter-channel::before,
 .audio-meter-channel > span {
   position: absolute;
   left: 3px;
   right: 3px;
+  top: 3px;
   bottom: 20px;
-  height: var(--meter-level, 0%);
-  max-height: calc(100% - 24px);
-  background: linear-gradient(to top, #12d80b 0 68%, #ffe600 68% 87%, #ff2418 87% 100%);
-  transition: height 90ms linear;
-  box-shadow: 0 0 8px rgba(28, 255, 0, 0.36);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+  content: '';
+}
+
+.audio-meter-channel::before {
+  background:
+    repeating-linear-gradient(to top, transparent 0 8px, rgba(0, 0, 0, 0.72) 8px 11px),
+    linear-gradient(
+      to top,
+      rgba(18, 216, 11, 0.13) 0 68%,
+      rgba(255, 230, 0, 0.13) 68% 87%,
+      rgba(255, 36, 24, 0.13) 87% 100%
+    );
+}
+
+.audio-meter-channel > span {
+  background:
+    repeating-linear-gradient(to top, transparent 0 8px, rgba(0, 0, 0, 0.72) 8px 11px),
+    linear-gradient(to top, #12e70b 0 68%, #ffe600 68% 87%, #ff2418 87% 100%);
+  clip-path: inset(calc(100% - var(--meter-level, 0%)) 0 0);
+  transition: clip-path 90ms linear;
+  box-shadow: 0 0 8px rgba(28, 255, 0, 0.32);
 }
 
 .audio-meter-channel small {
@@ -252,7 +270,7 @@ body {
 }
 
 .audio-meter-set.is-offline .audio-meter-channel > span {
-  height: 0;
+  clip-path: inset(100% 0 0);
 }
 
 .audio-meter-set.is-offline .audio-meter-bars {
