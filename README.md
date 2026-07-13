@@ -2,15 +2,17 @@
 
 Wouldn't it be better if the monitor on the front of your camera showed more than just return video?
 
-News Talent Monitor+ turns a Raspberry Pi into a front-of-camera talent monitor for newsrooms and studio production teams. It shows return video, current PGM, upcoming PVW, talent mic assignments, headshots, and Shure wireless mic status in one screen.
+News Talent Monitor+ turns a Raspberry Pi into a front-of-camera talent monitor for newsrooms and studio production teams. It shows return video, current PGM, upcoming PVW, configurable stereo audio meters, talent mic assignments, headshots, and Shure wireless mic status in one screen.
+
+![News Talent Monitor+ talent display with NDI preview, source status, stereo audio meters, and mic tiles](docs/images/talent-display.jpg)
 
 ## Start Here
 
-The easiest install path is now the normal program installer for your operating system:
+The easiest install path is the normal program installer for your operating system:
 
 ```text
 NewsTalentMonitorPlus-Setup.exe
-Install on macOS.command
+Install News Talent Monitor.command
 ```
 
 Raspberry Pi OS with Desktop can be installed from Terminal with:
@@ -46,6 +48,9 @@ docs/INSTALL_AS_PROGRAM.md
 - Large return video from an NDI source
 - Green `Now` box for the current PGM source
 - Yellow `Next` box for the current PVW source
+- Two configurable stereo audio meters with fixed green, yellow, and red level zones
+- vMix master, bus, or input metering
+- Behringer WING channel, aux, bus, main, matrix, or DCA metering
 - Mic assignment tiles for anchors, hosts, reporters, or guests
 - Optional headshot beside each assigned person
 - Battery, RF, audio level, and online/offline state for each mic
@@ -61,7 +66,8 @@ docs/INSTALL_AS_PROGRAM.md
    - Green means the mic is online and healthy.
    - Yellow means something needs attention.
    - Red means the mic or transmitter is unavailable.
-6. Tap the hamburger button in the upper-right corner to open setup.
+6. Confirm the stereo meters respond to the expected audio sources.
+7. Tap the hamburger button in the upper-right corner to open setup.
 
 ## Important Links
 
@@ -78,13 +84,50 @@ After the Pi boots, open:
 http://<pi-ip-address>:8010/config
 ```
 
-The config page has tabs:
+![News Talent Monitor+ configuration page](docs/images/configuration-overview.jpg)
 
-- `Display`: choose the NDI source.
+The config page has these tabs:
+
+- `Display`: choose the NDI source, configure the Now/Next boxes, and set up the two audio meters.
+- `Room Sign`: configure the optional room-sign display.
 - `Companion`: enter the Companion URL and PGM/PVW variables.
-- `Photos`: enter the photo folder URL.
-- `Receivers`: keep QLX-D defaults unless needed.
-- `Mics`: enter each Shure receiver IP and assignment variable.
+- `Photos`: enter the photo-folder URL.
+- `Receivers`: keep the QLX-D defaults unless your receivers use different settings.
+- `Mics`: enter each Shure receiver IP and optional Companion assignment variable.
+- `System`: install the latest version from GitHub without replacing local configuration.
+
+After changing a setting, select `Save configuration` at the bottom of the page.
+
+## Audio Meter Setup
+
+The talent display supports two independently configurable stereo meters. Either position can use vMix, a Behringer WING, or be turned off.
+
+![Audio meter configuration with vMix on the left and Behringer WING on the right](docs/images/audio-meter-configuration.jpg)
+
+Open the `Display` tab and scroll to `Audio meters`. For each meter, set:
+
+- `Source`: `vMix`, `Behringer WING`, or `Off`.
+- `Label`: the short name shown below the meter.
+- `Host`: the device IP address or hostname.
+- `Port`: `8088` for the vMix Web API or `2222` for WING native metering.
+
+For vMix, set `vMix target` to one of the following:
+
+- `master`
+- `busA` through `busG`
+- An input number, exact input title, or input key
+
+For WING, choose the meter group (`main`, `bus`, `channel`, `aux`, `matrix`, or `dca`) and its one-based index. For example, WING master is `main` with index `1`.
+
+The Pi must be able to reach the selected audio device over the network. If a meter is dim and does not move, verify its host, port, group/target, and network access.
+
+## Updating An Installed Device
+
+Open `http://<pi-ip-address>:8010/config`, select `System`, and choose `Update to latest code`. The updater downloads the latest public GitHub version, installs any changed Python dependencies, preserves local configuration and data, and restarts the service.
+
+![System tab showing a successful GitHub update](docs/images/software-update.jpg)
+
+Wait for `State: success`. The page may disconnect briefly while the service restarts. Refresh the display afterward if the browser has not reloaded automatically.
 
 ## Legal And Licensing Notes
 
@@ -106,10 +149,10 @@ See `LICENSE` and `THIRD_PARTY_NOTICES.md` for project license and attribution d
 
 ## More Docs
 
-- First-time setup: `docs/START_HERE.md`
-- Windows photo/server notes: `docs/WINDOWS_SETUP.md`
-- Image builder details: `deploy/pi-image/README.md`
-- Raspberry Pi services: `deploy/raspberry-pi/README.md`
+- [First-time setup](docs/START_HERE.md)
+- [Windows photo/server notes](docs/WINDOWS_SETUP.md)
+- [Image builder details](deploy/pi-image/README.md)
+- [Raspberry Pi services](deploy/raspberry-pi/README.md)
 
 ## Developer Notes
 

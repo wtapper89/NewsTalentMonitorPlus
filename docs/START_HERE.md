@@ -218,6 +218,26 @@ Then use the tabs:
 3. Pick your vMix NDI output.
 4. Save.
 
+### Audio Meters
+
+Audio meters are configured near the bottom of the `Display` tab. Either meter can use vMix, a Behringer WING, or be turned off.
+
+For a vMix meter:
+
+1. Set `Source` to `vMix`.
+2. Enter the vMix hostname or IP address.
+3. Set `Port` to `8088`.
+4. Set `vMix target` to `master`, `busA` through `busG`, or an input number, exact title, or key.
+
+For a WING meter:
+
+1. Set `Source` to `Behringer WING`.
+2. Enter the WING IP address.
+3. Set `Port` to `2222`.
+4. Choose `main`, `bus`, `channel`, `aux`, `matrix`, or `dca` and enter its one-based index. WING master is `main` index `1`.
+
+Set a short label for each meter, then save the configuration.
+
 ### Companion
 
 1. Set `Enable Companion polling` to `true`.
@@ -260,6 +280,15 @@ tools/windows-photo-server
 
 2. Enter that folder URL in `HTTP folder URL`.
 3. Save.
+
+### Software Updates
+
+To update an installed device without replacing its local configuration:
+
+1. Open the `System` tab.
+2. Select `Update to latest code`.
+3. Wait for `State: success` and allow the service to restart.
+4. Refresh the display if it does not reload automatically.
 
 ## Windows Photo Server
 
