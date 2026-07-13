@@ -69,6 +69,27 @@ DEFAULT_KIOSK = {
     "default_page": "display",
 }
 
+DEFAULT_AUDIO_METERS = {
+    "left": {
+        "source": "vmix",
+        "label": "vMix",
+        "host": "127.0.0.1",
+        "port": 8088,
+        "target": "master",
+        "meter_group": "main",
+        "meter_index": 1,
+    },
+    "right": {
+        "source": "wing",
+        "label": "WING Master",
+        "host": "127.0.0.1",
+        "port": 2222,
+        "target": "master",
+        "meter_group": "main",
+        "meter_index": 1,
+    },
+}
+
 
 def default_mic_entry(index: int, name: str, receiver: str, channel: str) -> dict:
     return {
@@ -110,6 +131,7 @@ DEFAULT_MAPPING = {
     "anchor_photos": deepcopy(DEFAULT_ANCHOR_PHOTOS),
     "room_sign": deepcopy(DEFAULT_ROOM_SIGN),
     "kiosk": deepcopy(DEFAULT_KIOSK),
+    "audio_meters": deepcopy(DEFAULT_AUDIO_METERS),
     "default_connection": {
         "scheme": "tcp",
         "port": 2202,
@@ -294,6 +316,24 @@ def _normalize_kiosk(raw_kiosk: dict | None) -> dict:
     return kiosk
 
 
+def _normalize_audio_meters(raw_audio_meters: dict | None) -> dict:
+    raw_audio_meters = raw_audio_meters or {}
+    meters = deepcopy(DEFAULT_AUDIO_METERS)
+    for side in ("left", "right"):
+        meters[side].update(raw_audio_meters.get(side) or {})
+        meter = meters[side]
+        source = str(meter.get("source") or "off").strip().lower()
+        meter["source"] = source if source in {"off", "vmix", "wing"} else "off"
+        meter["label"] = str(meter.get("label") or side.title()).strip()
+        meter["host"] = str(meter.get("host") or "127.0.0.1").strip()
+        meter["port"] = max(1, min(65535, int(meter.get("port") or (8088 if source == "vmix" else 2222))))
+        meter["target"] = str(meter.get("target") or "master").strip()
+        group = str(meter.get("meter_group") or "main").strip().lower()
+        meter["meter_group"] = group if group in {"channel", "aux", "bus", "main", "matrix", "dca"} else "main"
+        meter["meter_index"] = max(1, min(128, int(meter.get("meter_index") or 1)))
+    return meters
+
+
 class StateStore:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -363,6 +403,7 @@ class MappingStore:
         mapping["anchor_photos"] = _normalize_anchor_photos(raw.get("anchor_photos"))
         mapping["room_sign"] = _normalize_room_sign(raw.get("room_sign"))
         mapping["kiosk"] = _normalize_kiosk(raw.get("kiosk"))
+        mapping["audio_meters"] = _normalize_audio_meters(raw.get("audio_meters"))
         mapping["default_connection"].update(raw.get("default_connection", {}))
 
         if "mics" in raw:
