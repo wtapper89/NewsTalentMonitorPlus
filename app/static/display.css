@@ -320,11 +320,11 @@ body.status-hot {
 .status-sign {
   position: absolute;
   left: 50%;
-  bottom: 0;
+  top: calc(100% + clamp(8px, 1vh, 14px));
   z-index: 6;
   width: auto;
   max-width: min(86%, 920px);
-  transform: translate(-50%, 48%);
+  transform: translateX(-50%);
   pointer-events: none;
   background: transparent;
 }
@@ -336,7 +336,7 @@ body.status-hot {
 .status-edge-text {
   display: block;
   color: #ff2116;
-  font-size: var(--status-sign-font-size, clamp(2rem, 4.2vw, 5.8rem));
+  font-size: var(--status-sign-font-size, clamp(1.75rem, 3.2vw, 4.4rem));
   font-weight: 900;
   line-height: 0.84;
   text-align: center;
@@ -360,44 +360,8 @@ body.status-hot {
 
 .status-sign-on-air .status-edge-text,
 .status-sign-recording .status-edge-text {
-  animation: neon-alert-pulse 1.35s ease-in-out infinite;
-}
-
-@keyframes neon-alert-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    filter: brightness(1.28);
-    text-shadow:
-      0 0 7px rgba(255, 33, 22, 1),
-      0 0 22px rgba(255, 33, 22, 0.9),
-      0 0 46px rgba(255, 33, 22, 0.7),
-      0 0 74px rgba(255, 33, 22, 0.48);
-  }
-
-  38% {
-    opacity: 0.78;
-    filter: brightness(0.88);
-    text-shadow:
-      0 0 4px rgba(255, 33, 22, 0.72),
-      0 0 12px rgba(255, 33, 22, 0.58),
-      0 0 24px rgba(255, 33, 22, 0.38);
-  }
-
-  46% {
-    opacity: 1;
-    filter: brightness(1.45);
-  }
-
-  53% {
-    opacity: 0.62;
-    filter: brightness(0.72);
-  }
-
-  61% {
-    opacity: 1;
-    filter: brightness(1.34);
-  }
+  opacity: 1;
+  filter: brightness(1.18);
 }
 
 @keyframes hot-frame-pulse {
