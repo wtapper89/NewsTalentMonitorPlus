@@ -1,5 +1,6 @@
 :root {
   --bg: #5a5557;
+  --hot-bg: #4a0907;
   --fg: #f6f6f6;
   --panel-red: #f70d05;
   --ok: #1cff00;
@@ -26,6 +27,11 @@ body {
 
 body {
   overflow: hidden;
+  transition: background-color 240ms ease;
+}
+
+body.status-hot {
+  background: var(--hot-bg);
 }
 
 .kiosk-menu {
@@ -422,7 +428,7 @@ body {
 }
 
 .preview-frame #ndiPreviewImage {
-  object-fit: contain;
+  object-fit: var(--ndi-preview-fit, contain);
 }
 
 .preview-placeholder {

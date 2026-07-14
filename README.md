@@ -88,7 +88,7 @@ http://<pi-ip-address>:8010/config
 
 The config page has these tabs:
 
-- `Display`: choose the NDI source, configure the Now/Next boxes, and set up the two audio meters.
+- `Display`: choose the NDI source and video fit, configure the Now/Next boxes, and set up the two audio meters.
 - `Room Sign`: configure the optional room-sign display.
 - `Companion`: enter the Companion URL and PGM/PVW variables.
 - `Photos`: enter the photo-folder URL.
@@ -97,6 +97,8 @@ The config page has these tabs:
 - `System`: install the latest version from GitHub without replacing local configuration.
 
 After changing a setting, select `Save configuration` at the bottom of the page.
+
+`NDI video fit` controls mismatched source aspect ratios. Use `Contain` to show the complete source, `Fill frame` to remove bars by cropping the edges, or `Stretch` to fill without cropping at the cost of possible distortion.
 
 ## Audio Meter Setup
 

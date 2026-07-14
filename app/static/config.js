@@ -133,6 +133,14 @@ function buildGlobalFields() {
           </select>
         </label>
         <label class="stack">
+          ${fieldLabel('NDI video fit', 'Contain shows the full frame and may add bars. Fill frame crops edges to remove bars. Stretch fills without cropping but may distort the picture.')}
+          <select data-global-field="display.preview_fit">
+            <option value="contain" ${String(display.preview_fit || 'contain') === 'contain' ? 'selected' : ''}>Contain (show full frame)</option>
+            <option value="cover" ${String(display.preview_fit || '') === 'cover' ? 'selected' : ''}>Fill frame (crop edges)</option>
+            <option value="fill" ${String(display.preview_fit || '') === 'fill' ? 'selected' : ''}>Stretch to frame</option>
+          </select>
+        </label>
+        <label class="stack">
           ${fieldLabel('Preview URL', 'Only needed when Preview mode is iframe, image, or video. NDI mode ignores this field.')}
           <input type="text" value="${escapeHtml(display.preview_url ?? '')}" data-global-field="display.preview_url" placeholder="http://127.0.0.1:8080/preview" />
         </label>
@@ -665,6 +673,7 @@ function normalizeForSave() {
       show_title_mode: String(configState.display.show_title_mode || 'manual').trim() || 'manual',
       manual_show_title: String(configState.display.manual_show_title || 'TVC NEWS').trim() || 'TVC NEWS',
       preview_mode: String(configState.display.preview_mode || 'placeholder').trim() || 'placeholder',
+      preview_fit: String(configState.display.preview_fit || 'contain').trim().toLowerCase() || 'contain',
       preview_url: String(configState.display.preview_url || '').trim(),
       preview_source_name: String(configState.display.preview_source_name || '').trim(),
       preview_poster_url: String(configState.display.preview_poster_url || '').trim(),

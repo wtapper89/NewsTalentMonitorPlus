@@ -19,6 +19,7 @@ DEFAULT_DISPLAY = {
     "show_title_mode": "manual",
     "manual_show_title": "TVC NEWS",
     "preview_mode": "placeholder",
+    "preview_fit": "contain",
     "preview_url": "",
     "preview_source_name": "",
     "preview_poster_url": "",
@@ -214,6 +215,9 @@ def _normalize_display(raw_display: dict | None) -> dict:
     display["preview_mode"] = str(display.get("preview_mode") or "placeholder").strip().lower() or "placeholder"
     if display["preview_mode"] not in {"placeholder", "iframe", "image", "video", "ndi"}:
         display["preview_mode"] = "placeholder"
+    display["preview_fit"] = str(display.get("preview_fit") or "contain").strip().lower() or "contain"
+    if display["preview_fit"] not in {"contain", "cover", "fill"}:
+        display["preview_fit"] = "contain"
     display["preview_url"] = str(display.get("preview_url") or "").strip()
     display["preview_source_name"] = str(display.get("preview_source_name") or "").strip()
     display["preview_poster_url"] = str(display.get("preview_poster_url") or "").strip()

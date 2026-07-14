@@ -117,6 +117,7 @@ class DisplayConfigRequest(BaseModel):
     show_title_mode: str = Field(default="manual", max_length=32)
     manual_show_title: str = Field(default="TVC NEWS", max_length=128)
     preview_mode: str = Field(default="placeholder", max_length=32)
+    preview_fit: str = Field(default="contain", max_length=16)
     preview_url: str = Field(default="", max_length=1024)
     preview_source_name: str = Field(default="", max_length=255)
     preview_poster_url: str = Field(default="", max_length=1024)

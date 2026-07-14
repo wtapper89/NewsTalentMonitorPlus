@@ -230,6 +230,7 @@ function renderStatusSign(display) {
   const text = String(display.status_sign_text || '').trim()
   const isHot = enabled && Boolean(text) && (mode === 'on-air' || mode === 'recording')
 
+  document.body.classList.toggle('status-hot', isHot)
   previewStageEl?.classList.toggle('status-hot', isHot)
   previewStageEl?.classList.toggle('status-custom', enabled && Boolean(text) && mode === 'custom')
   statusSignEl.className = 'status-sign'
@@ -287,10 +288,14 @@ window.handleAnchorPhotoError = handleAnchorPhotoError
 
 function renderPreview(display) {
   const previewMode = String(display.preview_mode || 'placeholder')
+  const requestedPreviewFit = String(display.preview_fit || 'contain').trim().toLowerCase()
+  const previewFit = ['contain', 'cover', 'fill'].includes(requestedPreviewFit) ? requestedPreviewFit : 'contain'
   const previewUrl = String(display.preview_url || '')
   const sourceName = String(display.preview_source_name || '').trim()
   const posterUrl = String(display.preview_poster_url || '')
-  const signature = JSON.stringify([previewMode, previewUrl, sourceName, posterUrl])
+  const signature = JSON.stringify([previewMode, previewFit, previewUrl, sourceName, posterUrl])
+
+  previewFrameEl.style.setProperty('--ndi-preview-fit', previewFit)
 
   if (signature === previewSignature) return
   previewSignature = signature

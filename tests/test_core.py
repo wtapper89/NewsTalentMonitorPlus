@@ -82,6 +82,7 @@ class MappingStoreTests(unittest.TestCase):
                     "show_title_mode": "companion",
                     "manual_show_title": "TVC NEWS",
                     "preview_mode": "ndi",
+                    "preview_fit": "cover",
                     "preview_url": "http://127.0.0.1:9000/preview",
                     "font_family": "Gotham",
                     "now_panel_label": "Live",
@@ -105,6 +106,7 @@ class MappingStoreTests(unittest.TestCase):
 
             self.assertEqual(mapping["display"]["show_title_mode"], "companion")
             self.assertEqual(mapping["display"]["preview_mode"], "ndi")
+            self.assertEqual(mapping["display"]["preview_fit"], "cover")
             self.assertEqual(mapping["display"]["font_family"], "Gotham")
             self.assertEqual(mapping["display"]["now_panel_label"], "Live")
             self.assertEqual(mapping["display"]["now_panel_border_color"], "#00ff88")
