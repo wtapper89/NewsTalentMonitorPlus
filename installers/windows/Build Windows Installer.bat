@@ -5,7 +5,7 @@ cd /d "%~dp0..\.."
 echo News Talent Monitor+ Windows EXE installer builder
 echo.
 
-if not defined NTM_VERSION set "NTM_VERSION=0.2.0"
+if not defined NTM_VERSION set "NTM_VERSION=0.2.1"
 
 where python >nul 2>nul
 if errorlevel 1 (
