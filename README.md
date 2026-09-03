@@ -15,6 +15,8 @@ NewsTalentMonitorPlus-Setup.exe
 Install News Talent Monitor.command
 ```
 
+Tagged releases automatically publish installer artifacts for Windows, macOS, and Raspberry Pi on the [GitHub Releases page](https://github.com/wtapper89/NewsTalentMonitorPlus/releases).
+
 Raspberry Pi OS with Desktop can be installed from Terminal with:
 
 ```bash
@@ -174,3 +176,5 @@ Run tests:
 ```bash
 python3 -m unittest discover -s tests
 ```
+
+Pushing a `v*` tag runs `.github/workflows/release.yml`, tests the application, builds all three installer formats, and attaches them to a GitHub release. The same workflow can be run manually to validate installer builds without publishing a release.

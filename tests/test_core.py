@@ -23,6 +23,7 @@ from app.services.shure import (
     deep_get,
     render_template,
 )
+from app.services.updater import AppUpdater, DEFAULT_TARBALL_URL
 from app.store import MappingStore, StateStore
 
 
@@ -229,6 +230,36 @@ class AudioMeterTests(unittest.TestCase):
         packet = struct.pack(">I8h", report_id, -15360, -15360, -7680, -3840, 0, 0, 0, 0)
 
         self.assertEqual(parse_wing_meter_packet(packet, report_id), (50.0, 75.0))
+
+
+class UpdaterTests(unittest.TestCase):
+    def test_public_archive_url_tracks_main_branch(self) -> None:
+        self.assertEqual(
+            DEFAULT_TARBALL_URL,
+            "https://github.com/wtapper89/NewsTalentMonitorPlus/archive/refs/heads/main.tar.gz",
+        )
+
+    def test_archive_update_preserves_local_configuration_and_data(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "download"
+            destination = root / "installed"
+            (source / "app" / "static").mkdir(parents=True)
+            (source / "config").mkdir()
+            (source / "data").mkdir()
+            (destination / "config").mkdir(parents=True)
+            (destination / "data").mkdir()
+            (source / "app" / "static" / "display.css").write_text("new", encoding="utf-8")
+            (source / "config" / "mapping.json").write_text("downloaded", encoding="utf-8")
+            (source / "data" / "state.json").write_text("downloaded", encoding="utf-8")
+            (destination / "config" / "mapping.json").write_text("local", encoding="utf-8")
+            (destination / "data" / "state.json").write_text("local", encoding="utf-8")
+
+            AppUpdater(destination)._sync_tree(source, destination)  # type: ignore[attr-defined]
+
+            self.assertEqual((destination / "app" / "static" / "display.css").read_text(), "new")
+            self.assertEqual((destination / "config" / "mapping.json").read_text(), "local")
+            self.assertEqual((destination / "data" / "state.json").read_text(), "local")
 
 
 class AnchorPhotoTests(unittest.TestCase):

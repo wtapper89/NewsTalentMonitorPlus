@@ -1,0 +1,95 @@
+name: Build installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -v
+      - name: Check browser JavaScript
+        run: |
+          node --check app/static/app.js
+          node --check app/static/config.js
+          node --check app/static/display.js
+          node --check app/static/reload-on-update.js
+          node --check app/static/room-sign.js
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt pyinstaller
+      - run: choco install innosetup -y --no-progress
+      - name: Set installer version
+        shell: powershell
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          if (-not $version) { $version = "dev" }
+          "NTM_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Build Windows installer
+        shell: cmd
+        run: call "installers\windows\Build Windows Installer.bat"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NewsTalentMonitorPlus-Windows
+          path: dist/windows-installer/NewsTalentMonitorPlus-Setup.exe
+
+  macos:
+    needs: test
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build macOS installer bundle
+        run: |
+          chmod +x installers/macos/build-release.sh
+          installers/macos/build-release.sh "${GITHUB_REF_NAME:-dev}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NewsTalentMonitorPlus-macOS
+          path: dist/NewsTalentMonitorPlus-macOS-*.zip
+
+  raspberry-pi:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Raspberry Pi installer bundle
+        run: |
+          chmod +x installers/raspberry-pi/build-release.sh
+          installers/raspberry-pi/build-release.sh "${GITHUB_REF_NAME:-dev}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NewsTalentMonitorPlus-RaspberryPi
+          path: dist/NewsTalentMonitorPlus-RaspberryPi-*.tar.gz
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos, raspberry-pi]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/*

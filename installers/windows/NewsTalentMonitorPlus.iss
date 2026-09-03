@@ -1,7 +1,9 @@
 #define MyAppName "News Talent Monitor+"
 #define MyAppPublisher "News Talent Monitor+ Contributors"
 #define MyAppExeName "NewsTalentMonitor.exe"
-#define MyAppVersion "0.1.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "0.2.0"
+#endif
 
 [Setup]
 AppId={{C3D3B7A8-22E3-4E5D-A4BB-2B9873B1F985}

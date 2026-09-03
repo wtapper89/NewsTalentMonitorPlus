@@ -5,6 +5,8 @@ cd /d "%~dp0..\.."
 echo News Talent Monitor+ Windows EXE installer builder
 echo.
 
+if not defined NTM_VERSION set "NTM_VERSION=0.2.0"
+
 where python >nul 2>nul
 if errorlevel 1 (
   echo Python 3 was not found.
@@ -39,7 +41,7 @@ if not defined ISCC (
 
 echo.
 echo Building installer EXE...
-"%ISCC%" installers\windows\NewsTalentMonitorPlus.iss
+"%ISCC%" /DMyAppVersion=%NTM_VERSION% installers\windows\NewsTalentMonitorPlus.iss
 if errorlevel 1 exit /b 1
 
 echo.

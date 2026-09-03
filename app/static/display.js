@@ -115,9 +115,9 @@ function shouldSkipPhoto(signature) {
 
 function nameFontSize(name) {
   const length = String(name || '').length
-  if (length >= 24) return 'clamp(1rem, 1.2vw, 1.55rem)'
-  if (length >= 18) return 'clamp(1.08rem, 1.35vw, 1.8rem)'
-  if (length >= 14) return 'clamp(1.2rem, 1.55vw, 2.05rem)'
+  if (length >= 24) return 'clamp(0.72rem, 6.8cqw, 1.2rem)'
+  if (length >= 18) return 'clamp(0.78rem, 7.6cqw, 1.35rem)'
+  if (length >= 14) return 'clamp(0.84rem, 8.5cqw, 1.5rem)'
   return ''
 }
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -66,6 +67,7 @@ async def lifespan(app: FastAPI):
     app.state.photo_resolver = photo_resolver
     app.state.room_sign_service = room_sign_service
     app.state.updater = updater
+    app.state.instance_id = uuid.uuid4().hex
 
     try:
         yield
@@ -323,6 +325,11 @@ async def get_kiosk_url(request: Request) -> str:
 @app.get("/api/state")
 async def get_state(request: Request) -> dict:
     return await service_from(request).get_state()
+
+
+@app.get("/api/runtime")
+async def get_runtime(request: Request) -> dict:
+    return {"instance_id": request.app.state.instance_id}
 
 
 @app.get("/api/config")
