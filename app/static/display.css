@@ -140,6 +140,21 @@ body.status-hot::after {
   background: rgba(255, 255, 255, 0.14);
 }
 
+/* Keep live video compositing inexpensive on Raspberry Pi kiosks. */
+body::before,
+body::after {
+  display: none;
+}
+
+.kiosk-menu-toggle,
+.clock-block,
+.source-panel,
+.audio-meter-dock,
+.mic-tile {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 .display-shell {
   position: relative;
   z-index: 1;

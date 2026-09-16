@@ -338,7 +338,13 @@ class NDIReceiver:
         )
         if image.width > self.max_width:
             target_height = max(1, round(image.height * (self.max_width / image.width)))
-            image = image.resize((self.max_width, target_height), Image.Resampling.BILINEAR)
+            # Integer area reduction avoids a full-resolution resampling pass
+            # for the common 1080p-to-540p preview on Raspberry Pi.
+            factor = image.width // self.max_width
+            if factor >= 2:
+                image = image.reduce(factor)
+            if image.size != (self.max_width, target_height):
+                image = image.resize((self.max_width, target_height), Image.Resampling.BILINEAR)
         output = BytesIO()
         image.save(output, format="JPEG", quality=self.jpeg_quality, optimize=False)
         return NDIFrame(
