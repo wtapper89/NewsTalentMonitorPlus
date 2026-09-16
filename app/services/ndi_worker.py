@@ -76,6 +76,12 @@ def main() -> int:
 
         while not stop_path.exists():
             min_interval = 1.0 / NDI_PREVIEW_FPS
+            # Pace before acquisition so we publish a fresh frame immediately,
+            # rather than holding an already captured frame until the deadline.
+            remaining = min_interval - (time.monotonic() - last_video_encoded_at)
+            if remaining > 0:
+                time.sleep(remaining)
+            capture_started_at = time.monotonic()
 
             frame, frame_error = receiver.capture_jpeg(timeout_ms=NDI_CAPTURE_TIMEOUT_MS)
             if frame is None:
@@ -108,10 +114,7 @@ def main() -> int:
                     )
                 continue
 
-            elapsed = time.monotonic() - last_video_encoded_at
-            if elapsed < min_interval:
-                time.sleep(min_interval - elapsed)
-            last_video_encoded_at = time.monotonic()
+            last_video_encoded_at = capture_started_at
             last_video_at = time.monotonic()
             fps_window_frames += 1
             fps_elapsed = last_video_at - fps_window_started_at
@@ -130,6 +133,9 @@ def main() -> int:
                     "frame_width": frame.width,
                     "frame_height": frame.height,
                     "captured_at": frame.captured_at,
+                    "capture_ms": round(receiver.capture_ms, 2),
+                    "encode_ms": round(receiver.encode_ms, 2),
+                    "source_fps": round(receiver.source_fps, 2),
                     "preview_max_width": NDI_PREVIEW_MAX_WIDTH,
                     "preview_fps": NDI_PREVIEW_FPS,
                     "actual_fps": actual_fps,

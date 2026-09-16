@@ -26,7 +26,7 @@ NDI_RECV_COLOR_FORMAT_BGRX_BGRA = 0
 NDI_RECV_BANDWIDTH_LOWEST = 0
 NDI_RECV_BANDWIDTH_HIGHEST = 100
 NDI_PREVIEW_MAX_WIDTH = 960
-NDI_PREVIEW_FPS = 30.0
+NDI_PREVIEW_FPS = max(1.0, min(60.0, float(os.getenv("ANCHOR_MICS_NDI_FPS", "30"))))
 NDI_PREVIEW_JPEG_QUALITY = 64
 NDI_CAPTURE_TIMEOUT_MS = 1000
 NDI_MAX_DRAIN_FRAMES = 120
@@ -223,13 +223,18 @@ class NDIReceiver:
         self.jpeg_quality = max(1, min(95, int(jpeg_quality)))
         self.max_width = max(240, int(max_width))
         self.recv_instance: ctypes.c_void_p | None = None
+        self.capture_ms = 0.0
+        self.encode_ms = 0.0
+        self.source_fps = 0.0
 
     def connect(self, timeout_ms: int = 5000) -> None:
         source = self._find_source(timeout_ms)
         recv_create = NDIlibRecvCreateV3(
             source_to_connect_to=source,
             color_format=NDI_RECV_COLOR_FORMAT_BGRX_BGRA,
-            bandwidth=NDI_RECV_BANDWIDTH_HIGHEST,
+            bandwidth=(NDI_RECV_BANDWIDTH_LOWEST
+                       if os.getenv("ANCHOR_MICS_NDI_BANDWIDTH", "highest").lower() == "lowest"
+                       else NDI_RECV_BANDWIDTH_HIGHEST),
             allow_video_fields=True,
         )
         self.recv_instance = self.ndi.lib.NDIlib_recv_create_v3(ctypes.byref(recv_create))
@@ -243,6 +248,7 @@ class NDIReceiver:
             self.recv_instance = None
 
     def capture_jpeg(self, timeout_ms: int = 1000) -> tuple[NDIFrame | None, str]:
+        capture_started = time.perf_counter()
         if not self.recv_instance:
             raise NDIUnavailableError("NDI receiver is not connected")
 
@@ -261,7 +267,12 @@ class NDIReceiver:
 
             if latest_video is None:
                 return None, ""
-            return self._video_to_jpeg(latest_video), ""
+            self.source_fps = latest_video.frame_rate_N / max(1, latest_video.frame_rate_D)
+            encode_started = time.perf_counter()
+            result = self._video_to_jpeg(latest_video)
+            self.encode_ms = (time.perf_counter() - encode_started) * 1000
+            self.capture_ms = (encode_started - capture_started) * 1000
+            return result, ""
         except NDIUnavailableError as exc:
             return None, str(exc)
         finally:
@@ -486,6 +497,10 @@ class NDIBridge:
             "preview_max_width": NDI_PREVIEW_MAX_WIDTH,
             "preview_fps": NDI_PREVIEW_FPS,
             "actual_fps": status.get("actual_fps"),
+            "capture_ms": status.get("capture_ms"),
+            "encode_ms": status.get("encode_ms"),
+            "source_fps": status.get("source_fps"),
+            "bandwidth": os.getenv("ANCHOR_MICS_NDI_BANDWIDTH", "highest"),
             "thread_running": process_running,
             "worker_running": process_running,
             "worker_pid": self._process.pid if process_running and self._process else None,
