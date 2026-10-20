@@ -1,3 +1,9 @@
+@font-face {
+  font-family: 'Room Event Medium';
+  src: local('Gotham Medium'), local('Gotham-Medium');
+  font-weight: 500;
+}
+
 :root {
   --ut-orange: #ff8200;
   --ut-white: #ffffff;
@@ -333,7 +339,7 @@ body {
   border-top: 6px solid var(--ut-orange);
   border-radius: 12px;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(5px, 0.9vh, 10px);
   background: linear-gradient(180deg, var(--panel-soft), var(--panel));
 }
@@ -352,26 +358,41 @@ body {
 .schedule-event-date,
 .schedule-event-time {
   color: var(--muted);
-  font-size: clamp(0.72rem, 1vw, 1.15rem);
-  font-weight: 800;
-  line-height: 1;
+  font-family: 'Room Event Medium', Arial, sans-serif;
+  font-size: clamp(1rem, 1.65vw, 2rem);
+  font-weight: 500;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
-.schedule-event-title {
+.schedule-event-heading {
+  display: grid;
+  gap: 6px;
+  padding-bottom: clamp(8px, 1.2vh, 16px);
+  border-bottom: 2px solid var(--line);
+  text-align: center;
+}
+
+.schedule-event-title-space {
   min-width: 0;
   min-height: 0;
-  align-self: center;
-  display: -webkit-box;
-  color: #fff;
-  font-size: clamp(1.15rem, 1.8vw, 2.25rem);
-  font-weight: 900;
-  line-height: 1.03;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
-  overflow-wrap: break-word;
+}
+
+.schedule-event-title {
+  width: 100%;
+  min-width: 0;
+  color: #fff;
+  font-family: 'Room Event Medium', Arial, sans-serif;
+  font-size: var(--event-title-size, 24px);
+  font-weight: 500;
+  line-height: 1.08;
+  overflow-wrap: normal;
   text-wrap: balance;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  text-align: center;
 }
 
 .room-fallback {
@@ -432,12 +453,8 @@ body {
     gap: 5px;
   }
 
-  .schedule-event-title {
-    font-size: clamp(1.1rem, 1.65vw, 1.9rem);
-  }
-
   .schedule-event-date,
   .schedule-event-time {
-    font-size: clamp(0.68rem, 0.9vw, 0.95rem);
+    font-size: clamp(1rem, 1.4vw, 1.65rem);
   }
 }

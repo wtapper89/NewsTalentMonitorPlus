@@ -12,6 +12,34 @@ const scheduleErrorEl = document.getElementById('scheduleError')
 const availabilityPillEl = document.getElementById('availabilityPill')
 
 const REFRESH_MS = 1000
+let eventsMarkup = null
+let titleFitFrame = null
+
+function fitEventTitles() {
+  titleFitFrame = null
+  if (!scheduleViewEl.classList.contains('is-active')) return
+  const titles = [...eventListEl.querySelectorAll('.schedule-event-title')]
+  if (!titles.length) return
+  let low = 1
+  let high = Math.max(...titles.map(title => title.parentElement.clientHeight))
+  // One shared size: the most constrained title determines every card's size.
+  for (let i = 0; i < 16; i += 1) {
+    const size = (low + high) / 2
+    eventListEl.style.setProperty('--event-title-size', `${size}px`)
+    const fits = titles.every(title => {
+      const space = title.parentElement
+      return title.getBoundingClientRect().height <= space.clientHeight - 2
+        && title.scrollWidth <= space.clientWidth
+    })
+    if (fits) low = size
+    else high = size
+  }
+  eventListEl.style.setProperty('--event-title-size', `${Math.floor(low)}px`)
+}
+
+function scheduleTitleFit() {
+  if (titleFitFrame === null) titleFitFrame = requestAnimationFrame(fitEventTitles)
+}
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -91,9 +119,11 @@ function renderScheduleEvent(event) {
   const isCurrent = Boolean(event && event.is_current)
   return `
     <article class="schedule-event${isCurrent ? ' is-current' : ''}">
-      <div class="schedule-event-date">${escapeHtml(isCurrent ? 'In Use Now' : event.date_label || '')}</div>
-      <div class="schedule-event-title">${escapeHtml(event.title || 'Untitled Event')}</div>
-      <div class="schedule-event-time">${escapeHtml(event.time_label || '')}</div>
+      <header class="schedule-event-heading">
+        <div class="schedule-event-date">${escapeHtml(event.date_label || (isCurrent ? 'Today' : ''))}</div>
+        <div class="schedule-event-time">${escapeHtml(event.time_label || '')}</div>
+      </header>
+      <div class="schedule-event-title-space"><div class="schedule-event-title">${escapeHtml(event.title || 'Untitled Event')}</div></div>
     </article>
   `
 }
@@ -106,7 +136,13 @@ function renderScheduleMode(state) {
   ]
   scheduleRoomNameEl.textContent = state.room_name || 'Studio'
   scheduleErrorEl.textContent = state.schedule_error || ''
-  eventListEl.innerHTML = events.map(renderScheduleEvent).join('')
+  const markup = events.map(renderScheduleEvent).join('')
+  const changed = markup !== eventsMarkup
+  const wasHidden = !scheduleViewEl.classList.contains('is-active')
+  if (changed) {
+    eventListEl.innerHTML = markup
+    eventsMarkup = markup
+  }
   eventListEl.style.display = events.length ? 'grid' : 'none'
   roomFallbackEl.textContent = 'No upcoming events'
   roomFallbackEl.classList.toggle('is-active', !events.length)
@@ -116,6 +152,7 @@ function renderScheduleMode(state) {
   scheduleViewEl.classList.toggle('is-in-use', isInUse)
   scheduleViewEl.classList.toggle('is-available', !isInUse)
   statusViewEl.classList.remove('is-active', 'status-hot')
+  if (changed || wasHidden) scheduleTitleFit()
 }
 
 function render(state) {
@@ -148,6 +185,9 @@ async function tick() {
 }
 
 window.addEventListener('resize', fitStatusText)
+window.addEventListener('resize', scheduleTitleFit)
+new ResizeObserver(scheduleTitleFit).observe(eventListEl)
+document.fonts.ready.then(scheduleTitleFit)
 
 tick()
 window.setInterval(tick, REFRESH_MS)
