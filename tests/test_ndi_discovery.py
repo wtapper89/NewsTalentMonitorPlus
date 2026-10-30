@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import unittest
+import ctypes
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from app.services.ndi import NDIlibSource, discover_ndi_sources
+from app.services.ndi import NDIlibSource, NDIlibRecvCreateV3, NDIReceiver, discover_ndi_sources
 
 
 class FakeFinder:
@@ -57,6 +58,30 @@ class DiscoveryTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 discover_ndi_sources(SimpleNamespace(lib=lib))
         self.assertTrue(lib.destroyed)
+
+
+class ReceiverLayoutTests(unittest.TestCase):
+    def test_receiver_settings_include_final_name_pointer(self):
+        # SDK v3 layout: source (two pointers), two enums, bool, name pointer.
+        pointer_size = ctypes.sizeof(ctypes.c_void_p)
+        name_offset = ((2 * pointer_size + 9 + pointer_size - 1) // pointer_size) * pointer_size
+        self.assertEqual(NDIlibRecvCreateV3.p_ndi_recv_name.offset, name_offset)
+        self.assertEqual(ctypes.sizeof(NDIlibRecvCreateV3), name_offset + pointer_size)
+
+    def test_connect_passes_valid_receiver_settings(self):
+        from unittest.mock import Mock
+        lib = Mock()
+        lib.NDIlib_recv_create_v3.return_value = 123
+        receiver = NDIReceiver(SimpleNamespace(lib=lib), 'vMix')
+        source = NDIlibSource(b'vMix', b'host:5961')
+        with patch.object(receiver, '_find_source', return_value=source):
+            receiver.connect()
+        settings = lib.NDIlib_recv_create_v3.call_args.args[0]._obj
+        self.assertEqual(settings.p_ndi_recv_name, b'News Talent Monitor+')
+        self.assertEqual(settings.source_to_connect_to.p_ndi_name, b'vMix')
+        self.assertEqual(receiver.recv_instance, 123)
+        receiver.close()
+        lib.NDIlib_recv_destroy.assert_called_once_with(123)
 
 
 if __name__ == '__main__':

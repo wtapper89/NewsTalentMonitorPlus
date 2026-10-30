@@ -56,6 +56,7 @@ class NDIlibRecvCreateV3(ctypes.Structure):
         ("color_format", ctypes.c_int),
         ("bandwidth", ctypes.c_int),
         ("allow_video_fields", ctypes.c_bool),
+        ("p_ndi_recv_name", ctypes.c_char_p),
     ]
 
 
@@ -236,6 +237,7 @@ class NDIReceiver:
                        if os.getenv("ANCHOR_MICS_NDI_BANDWIDTH", "highest").lower() == "lowest"
                        else NDI_RECV_BANDWIDTH_HIGHEST),
             allow_video_fields=True,
+            p_ndi_recv_name=b"News Talent Monitor+",
         )
         self.recv_instance = self.ndi.lib.NDIlib_recv_create_v3(ctypes.byref(recv_create))
         if not self.recv_instance:
