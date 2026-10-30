@@ -507,7 +507,7 @@ class NDIBridge:
             "worker_exit_code": exit_code,
         }
 
-    def discover_sources(self, timeout_ms: int = 2000) -> list[dict[str, str]]:
+    def discover_sources(self, timeout_ms: int = 5000) -> list[dict[str, str]]:
         ndi = NDIlib()
         try:
             return discover_ndi_sources(ndi, timeout_ms=timeout_ms)
@@ -528,7 +528,7 @@ class NDIBridge:
             return {}
 
 
-def discover_ndi_sources(ndi: NDIlib, timeout_ms: int = 2000) -> list[dict[str, str]]:
+def discover_ndi_sources(ndi: NDIlib, timeout_ms: int = 5000) -> list[dict[str, str]]:
     find_create = NDIlibFindCreateV2(
         show_local_sources=True,
         p_groups=None,
@@ -539,7 +539,17 @@ def discover_ndi_sources(ndi: NDIlib, timeout_ms: int = 2000) -> list[dict[str, 
         raise NDIUnavailableError("Failed to create NDI source finder")
 
     try:
-        ndi.lib.NDIlib_find_wait_for_sources(find_instance, timeout_ms)
+        # A source-list change wakes the SDK wait immediately; it does not mean
+        # discovery is complete. Keep the finder alive for the full scan window.
+        deadline = time.monotonic() + max(0, timeout_ms) / 1000.0
+        while True:
+            remaining_ms = int((deadline - time.monotonic()) * 1000)
+            if remaining_ms <= 0:
+                break
+            ndi.lib.NDIlib_find_wait_for_sources(find_instance, remaining_ms)
+            # Read each update before waiting again, as in the SDK finder loop.
+            count = ctypes.c_uint32(0)
+            ndi.lib.NDIlib_find_get_current_sources(find_instance, ctypes.byref(count))
         source_count = ctypes.c_uint32(0)
         sources_ptr = ndi.lib.NDIlib_find_get_current_sources(find_instance, ctypes.byref(source_count))
         result: list[dict[str, str]] = []
